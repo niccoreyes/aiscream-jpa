@@ -2,8 +2,8 @@ version: '3.7'
 
 services:
   fhir:
-    container_name: fhir
-    image: "hapiproject/hapi:latest"
+    container_name: hapi
+    image: "hapiproject/hapi:v7.6.0"
     ports:
       - "8080:8080"
     configs:
@@ -13,7 +13,7 @@ services:
       - db
 
   db:
-    image: postgres
+    image: "postgres:17.2-bookworm"
     restart: always
     environment:
       POSTGRES_PASSWORD: admin
