@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="30 seconds">
-	<include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-	<include resource="org/springframework/boot/logging/logback/console-appender.xml" />
-	<root level="INFO">
+	<include
+		resource="org/springframework/boot/logging/logback/defaults.xml" />
+	<include
+		resource="org/springframework/boot/logging/logback/console-appender.xml" />
+	<root level="WARN">
 		<appender-ref ref="CONSOLE" />
 	</root>
-	<logger name = "org.opencds.cqf.cql.engine.debug" level="DEBUG"/>
+	<logger name="org.opencds.cqf.cql.engine.debug" level="DEBUG" />
+	<logger name="ca.uhn.fhir.jpa.packages" level="ERROR" />
+	<logger name="ca.uhn.fhir.jpa.packages.loader.PackageLoaderSvc" level="INFO" />
+	<logger name="ca.uhn.fhir.jpa.term" level="WARN" />
 </configuration>
+
