@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    url: 'jdbc:postgresql://db:5432/hapi'
+    username: admin
+    password: admin
+    driverClassName: org.postgresql.Driver
+  jpa:
+    properties:
+      hibernate.dialect: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
+      hibernate.search.enabled: false
+
+hapi:
+  fhir:
+    default_encoding: json
+    implementationguides:
+      au_core:
+        name: hl7.fhir.au.core
+        version: 1.0.0
+        reloadExisting: false
+        installMode: STORE_AND_INSTALL
+        fetchDependencies: true
+        dependencyExcludes:
+           - "hl7.fhir.uv.extensions"
+           - "hl7.terminology.r5"
+    logical_urls:
+      - http://terminology.hl7.org/*
+      - https://terminology.hl7.org/*
+      - http://snomed.info/*
+      - https://snomed.info/*
+      - http://unitsofmeasure.org/*
+      - https://unitsofmeasure.org/*
+      - http://loinc.org/*
+      - https://loinc.org/*
+      - http://hl7.org.au/*
+      - https://hl7.org.au/*
