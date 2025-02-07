@@ -11,7 +11,6 @@ spring:
 
 hapi:
   fhir:
-    default_encoding: json
     implementationguides:
       au_core:
         name: hl7.fhir.au.core
