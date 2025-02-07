@@ -1,3 +1,5 @@
+# Overview
+
 The `application.yaml` file configures a HAPI FHIR server using Spring Boot. It configures the database connection, the HAPI FHIR server, and the loading of the AU Core IG, including its dependencies (with specific exclusions) and the treatment of certain URLs as logical references. It sets up a complete HAPI FHIR environment ready to use the AU Core IG.
 
 ```yaml
@@ -59,8 +61,7 @@ Let's break down each section:
             *   `name`: The name of the IG (`hl7.fhir.au.core`). This often corresponds to the NPM package name.
             *   `version`: The version of the IG (`1.0.0`).
             *   `reloadExisting`:  A boolean value. When `false`, the IG is only installed if it doesn't already exist. When `true`, it will be reinstalled on server startup, even if it is already present.
-            *   `installMode`: Specifies how the IG should be installed. `STORE_AND_INSTALL` means that the IG's conformance resources (StructureDefinitions, ValueSets, etc.) will be stored and made available for validation, and any example resources included in the IG package will also be loaded into the server.  [See here for details](./store-mode).
-            *   `fetchDependencies`:  A boolean value. When `true`, HAPI FHIR will automatically fetch and install any IGs that the `au_core` IG depends on.  [See here for details](./fetch-dependencies).
-            *   `dependencyExcludes`: A list of regular expressions. Any dependency whose name matches one of these expressions will be excluded.  This is used to resolve dependency conflicts.  In this case, it excludes the `hl7.fhir.uv.extensions` and `hl7.terminology.r5` packages, because of version conflicts. [See here for details](./dependency-error).
-
-    *   `logical_urls`:** This section defines which URLs should be treated as *logical references*. [See here for details](./logical-url).
+            *   `installMode`: Specifies how the IG should be installed. `STORE_AND_INSTALL` means that the IG's conformance resources (StructureDefinitions, ValueSets, etc.) will be stored and made available for validation, and any example resources included in the IG package will also be loaded into the server.  [See here for details](./store-mode.md).
+            *   `fetchDependencies`:  A boolean value. When `true`, HAPI FHIR will automatically fetch and install any IGs that the `au_core` IG depends on.  [See here for details](./fetch-dependencies.md).
+            *   `dependencyExcludes`: A list of regular expressions. Any dependency whose name matches one of these expressions will be excluded.  This is used to resolve dependency conflicts.  In this case, it excludes the `hl7.fhir.uv.extensions` and `hl7.terminology.r5` packages, because of version conflicts. [See here for details](./dependency-error.md).
+    *   `logical_urls`:** This section defines which URLs should be treated as *logical references*. [See here for details](./logical-url.md).

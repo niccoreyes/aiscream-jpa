@@ -2,7 +2,7 @@
 
 The Docker Compose file defines a two-service application: a HAPI FHIR server and a PostgreSQL database.  
 
-In summary, this Docker Compose file sets up a HAPI FHIR server connected to a PostgreSQL database.  The `application.yaml` file, containing the server's configuration, is injected into the container using Docker Compose's `configs` mechanism.  This keeps the configuration separate from the image, making it easy to manage and modify. Please [read here for the details of the injection mechanism](./inserting-configuration).
+In summary, this Docker Compose file sets up a HAPI FHIR server connected to a PostgreSQL database.  The `application.yaml` file, containing the server's configuration, is injected into the container using Docker Compose's `configs` mechanism.  This keeps the configuration separate from the image, making it easy to manage and modify. Please [read here for the details of the injection mechanism](./inserting-configuration.md).
 
 The `depends_on` clause makes sure that the database is running before the HAPI FHIR server attempts to start. The persistent volume for the database ensures that your data is not lost when the container is stopped.
 
