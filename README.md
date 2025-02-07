@@ -2,7 +2,7 @@
 
 This code demonstrates how to start a HAPI FHIR server using Docker Compose and implicitly load an Implementation Guide (IG) upon startup.  The setup leverages both Docker Compose and Spring Boot configuration mechanisms to achieve this.  The code and accompanying configuration files provide a streamlined approach to deploying a HAPI FHIR server pre-configured with a specific IG, simplifying development and testing. The following sections will detail the process:
 
-1.  [**Docker Compose and Configuration Injection (including Spring Boot):**](./configuration-injection/docker-config) This subsection explains how Docker Compose is used to mount the necessary configuration files, including those for Spring Boot, into the HAPI FHIR server container, enabling the server to load the IG on startup.
+1.  [**Docker Compose and Configuration Injection (including Spring Boot):**](./configuration-injection/docker-config.md) This subsection explains how Docker Compose is used to mount the necessary configuration files, including those for Spring Boot, into the HAPI FHIR server container, enabling the server to load the IG on startup.
 
 2.  [**HAPI FHIR Configuration Details:**](./configuration-definition/overview) This subsection delves into the specifics of the HAPI FHIR configuration files, explaining the structure and meaning of the settings used to define the IG and its loading behavior within the HAPI FHIR server.
 
