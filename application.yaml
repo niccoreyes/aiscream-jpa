@@ -1,3 +1,6 @@
+# source of template 
+# https://github.com/hapifhir/hapi-fhir-jpaserver-starter/blob/master/src/main/resources/application.yaml
+# This resource also includes all available configurations and settings
 spring:
   datasource:
     url: 'jdbc:postgresql://db:5432/hapi'

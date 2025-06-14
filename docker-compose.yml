@@ -1,7 +1,7 @@
 services:
   fhir:
     container_name: hapi
-    image: "hapiproject/hapi:v7.6.0"
+    image: "hapiproject/hapi:v8.2.0-1" # updated to >8 since External Terminology Service work from there
     ports:
       - "8080:8080"
     configs:
