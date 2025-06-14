@@ -25,6 +25,16 @@ hapi:
         dependencyExcludes:
            - "hl7.fhir.uv.extensions"
            - "hl7.terminology.r5"
+      immunization_ig:
+        name: immunizationfhirig
+        version: 0.1.0
+        reloadExisting: false
+        installMode: STORE_AND_INSTALL
+        packageUrl: https://build.fhir.org/ig/UP-Manila-SILab/immunizationfhirig/package.tgz
+        fetchDependencies: true
+        dependencyExcludes:
+           - "hl7.fhir.uv.extensions"
+           - "hl7.terminology.r5"
     logical_urls:
       - http://terminology.hl7.org/*
       - https://terminology.hl7.org/*
