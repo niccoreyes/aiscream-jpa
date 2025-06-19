@@ -3,7 +3,7 @@ services:
     container_name: hapi
     image: "hapiproject/hapi:v8.2.0-1" # updated to >8 since External Terminology Service work from there
     ports:
-      - "8080:8080"
+      - "${HOST_PORT:-8080}:8080"
     configs:
       - source: hapi
         target: /app/config/application.yaml
