@@ -10,7 +10,11 @@ spring:
   jpa:
     properties:
       hibernate.dialect: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
-      hibernate.search.enabled: false
+      hibernate.search.enabled: true
+      hibernate.search.backend.type: lucene
+      hibernate.search.backend.directory.type: local-filesystem
+      hibernate.search.backend.directory.root: /tmp/lucene
+      hibernate.search.backend.analysis.configurer: ca.uhn.fhir.jpa.search.HapiHSearchAnalysisConfigurers$HapiLuceneAnalysisConfigurer
 
 hapi:
   fhir:
@@ -27,6 +31,7 @@ hapi:
            - "hl7.fhir.uv.extensions"
            - "hl7.fhir.uv.extensions.r4"
            - "hl7.terminology.r5"
+           - "hl7.fhir.uv.tools.r4"
       ph_eref:
         name: fhir.ph.ereferral
         version: 0.1.0
@@ -38,10 +43,12 @@ hapi:
            - "hl7.fhir.uv.extensions"
            - "hl7.fhir.uv.extensions.r4"
            - "hl7.terminology.r5"
+           - "hl7.fhir.uv.tools.r4"
            - "fhir.ph.core"
+    term:
+      pre_expand_value_sets: true
+      pre_expand_value_sets_interval: 300000
     logical_urls:
-      - http://terminology.hl7.org/*
-      - https://terminology.hl7.org/*
       - http://snomed.info/*
       - https://snomed.info/*
       - http://unitsofmeasure.org/*
@@ -49,6 +56,12 @@ hapi:
       - http://loinc.org/*
       - https://loinc.org/*
     remote_terminology_service:
-      all:
-        system: '*'
+      snomed:
+        system: 'http://snomed.info/sct'
+        url: 'https://tx.fhirlab.net/fhir'
+      loinc:
+        system: 'http://loinc.org'
+        url: 'https://tx.fhirlab.net/fhir'
+      rxnorm:
+        system: 'http://www.nlm.nih.gov/research/umls/rxnorm'
         url: 'https://tx.fhirlab.net/fhir'
