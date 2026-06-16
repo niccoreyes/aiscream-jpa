@@ -1,27 +1,157 @@
-# Overview
+# PH eReferral — HAPI FHIR JPA Server
 
-This code demonstrates how to start a HAPI FHIR server using Docker Compose and implicitly load an Implementation Guide (IG) upon startup.  The setup leverages both Docker Compose and Spring Boot configuration mechanisms to achieve this.  The code and accompanying configuration files provide a streamlined approach to deploying a HAPI FHIR server pre-configured with a specific IG, simplifying development and testing. The following sections will detail the process:
+A customized HAPI FHIR JPA server for the Philippine eReferral system, with
+automatic IG profile validation and identifier-based deduplication.
 
-1.  [**Docker Compose and Configuration Injection (including Spring Boot):**](./configuration-injection/docker-config.md) This subsection explains how Docker Compose is used to mount the necessary configuration files, including those for Spring Boot, into the HAPI FHIR server container, enabling the server to load the IG on startup.
+## What this does
 
-2.  [**HAPI FHIR Configuration Details:**](./configuration-definition/overview) This subsection delves into the specifics of the HAPI FHIR configuration files, explaining the structure and meaning of the settings used to define the IG and its loading behavior within the HAPI FHIR server.
+1. **Preloads PH Core and PH eReferral IGs** from `build.fhir.org` at startup.
+2. **Auto-validates every resource** against all stored profiles — no `$validate`
+   call needed.
+3. **Detects and auto-merges duplicates** on POST by matching identifiers
+   (PhilHealth ID, PhilSys ID, or any identifier).
+4. **Terminology validation** is delegated to `https://tx.fhirlab.net/fhir`.
 
-# Running the Setup
+## Quick start
 
-1.  Make sure you have Docker and Docker Compose installed.
-2.  Navigate to the directory containing the `docker-compose.yml` file in your terminal.
-3.  Run `docker-compose up -d` to start the containers in detached mode.
-4.  The HAPI FHIR server will start, connect to the Postgres database, and automatically install the AU Core IG based on your `application.yaml` configuration.
+```bash
+docker compose up -d
+```
 
-# Verification
+The server is at `http://localhost:8080/fhir`.
 
-1.  Access the HAPI FHIR server at `http://localhost:8080`.
-2.  You should be able to see the AU Core IG in the CapabilityStatement or by querying the ImplementationGuide resources. You can use the HAPI FHIR test client or tools like Postman to interact with the server.
+## Why a custom Docker image
 
-# Troubleshooting
+The stock `hapiproject/hapi` image supports configuration-only changes
+(Option A), but cannot run custom interceptors. For strict terminology
+enforcement and identifier-based deduplication (Option B), we forked the
+starter and built a custom image.
 
-*   **Logs:** Check the logs of the `hapi-fhir-server` container using `docker-compose logs hapi-fhir-server` for any errors during startup or IG installation.
-*   **Database:** If you have issues with the database, ensure that the credentials in your `docker-compose.yml` and `application.yaml` match.
-*   **IG URL:** Double-check the URL of your Implementation Guide. A typo or incorrect path will prevent installation.
+### What's different from upstream
 
-This comprehensive example should help you experiment with the AU Core FHIR Implementation Guide using HAPI FHIR and Docker Compose. Remember to replace the placeholder values in the configuration files with your actual IG URL, version, and FHIR version.
+| File | Change | Reason |
+|---|---|---|
+| `RepositoryValidationInterceptorFactoryR4.java` | `.rejectOnSeverity(WARNING)` + suppression methods | Unknown code systems (e.g. PSGC) now reject instead of warn |
+| `StarterJpaConfig.java` | `registerCustomInterceptors()` moved before `RepositoryValidatingInterceptor` | Dedup must run before validation |
+| `PhEreferralDeduplicationInterceptor.java` | New interceptor | Auto-merges POSTs by identifier match |
+
+## Architecture
+
+```
+docker-compose.yml
+├── fhir (custom image: niccoreyes/aiscream-hapi:latest)
+│   ├── application.yaml (IGs, validation, dedup config)
+│   └── PhEreferralDeduplicationInterceptor (auto-merge)
+└── db (postgres:17.2-bookworm)
+```
+
+## Validation flow
+
+```
+POST /Patient
+  → SERVER_INCOMING_REQUEST_PRE_HANDLED  (dedup check)
+     → if duplicate found: merge via DAO, return 200
+  → STORAGE_PRESTORAGE_RESOURCE_CREATED  (RepositoryValidatingInterceptor)
+     → enforce profile + rejectOnSeverity(WARNING)
+  → Committed (or rejected with 422)
+```
+
+## Dedup behavior
+
+| Resource type | Match criteria | Merge strategy |
+|---|---|---|
+| Patient | PhilHealth ID or PhilSys ID | Incoming wins; keep existing non-empty fields; identifier lists unioned |
+| Practitioner | Any identifier system+value | Same as Patient |
+| Organization | Any identifier system+value | Same as Patient |
+
+Multiple matches → picks newest by `meta.lastUpdated`.
+
+## Debugging process & key learnings
+
+### 1. `STORAGE_PRESTORAGE_RESOURCE_CREATED` hook doesn't work for dedup
+
+Even when registered before the `RepositoryValidatingInterceptor`, the storage
+hook fires but the resource modifications are not visible to the validator.
+HAPI's storage pipeline may use a copy of the resource.
+
+**Solution:** Use `SERVER_INCOMING_REQUEST_PRE_HANDLED` instead. At this level,
+we can search for existing matches, merge via the DAO directly, and throw a
+HAPI exception to return the response.
+
+### 2. DAO search requires `setLoadSynchronous(true)` + `SystemRequestDetails`
+
+Without `setLoadSynchronous(true)`, `IBundleProvider.getResources()` returned
+empty results even when the REST API search worked. Adding
+`SystemRequestDetails` as the request context ensures a fresh, non-cached
+search.
+
+### 3. `@Interceptor(order = N)` does NOT override registration order
+
+HAPI's `RestfulServer.registerInterceptor()` adds interceptors to a list.
+Invocation order follows registration order, not the `@Interceptor(order)`
+annotation. The annotation's `order` attribute controls ordering within a
+single interceptor's hooks, not between different interceptors.
+
+### 4. Anonymous `BaseServerResponseException` for clean dedup responses
+
+`BaseServerResponseException` is abstract but can be instantiated as an
+anonymous class. By overriding `getStatusCode()` to return 200, the client
+receives an HTTP 200 with an OperationOutcome describing the merge — rather
+than an error.
+
+### 5. `@Component` + `custom-bean-packages` for Spring-injected interceptors
+
+The starter's `registerCustomInterceptors()` first tries
+`ApplicationContext.getBean()`. If the class is annotated with `@Component`
+and the package is listed in `custom-bean-packages`, Spring creates the bean
+with dependency injection (e.g. `DaoRegistry`). If not found, it falls back to
+reflection instantiation (POJO, no injection).
+
+## Configuration
+
+See `application.yaml` for all settings. Key properties:
+
+```yaml
+hapi:
+  fhir:
+    enable_repository_validating_interceptor: true  # auto-validation
+    custom-bean-packages: ph.ereferral.interceptor   # scan dedup interceptor
+    custom-interceptor-classes:
+      - ph.ereferral.interceptor.PhEreferralDeduplicationInterceptor
+    validation:
+      requests_enabled: true                         # HTTP-layer validation
+    implementationguides:
+      ph_core: ...      # fhir.ph.core 0.2.0
+      ph_eref: ...      # fhir.ph.ereferral 0.1.0
+    remote_terminology_service:
+      all:
+        system: '*'
+        url: 'https://tx.fhirlab.net/fhir'
+```
+
+## Testing
+
+```bash
+# Create a valid Patient
+curl -X POST http://localhost:8080/fhir/Patient -H 'Content-Type: application/json' \
+  -d '{"resourceType":"Patient","meta":{"profile":["urn://example.com/ph-ereferral/fhir/StructureDefinition/ereferral-patient"]},"identifier":[{"system":"http://philhealth.gov.ph/fhir/Identifier/philhealth-id","value":"TEST-001"}],"name":[{"family":"Test","given":["User"]}],"gender":"male","birthDate":"1980-01-01"}'
+
+# POST same identifier (no birthDate) — should auto-merge
+curl -X POST http://localhost:8080/fhir/Patient -H 'Content-Type: application/json' \
+  -d '{"resourceType":"Patient","meta":{"profile":["urn://example.com/ph-ereferral/fhir/StructureDefinition/ereferral-patient"]},"identifier":[{"system":"http://philhealth.gov.ph/fhir/Identifier/philhealth-id","value":"TEST-001"}],"name":[{"family":"Test","given":["Merged"]}],"gender":"female"}'
+
+# POST without meta.profile — should be rejected
+curl -X POST http://localhost:8080/fhir/Patient -H 'Content-Type: application/json' \
+  -d '{"resourceType":"Patient","name":[{"family":"No","given":["Profile"]}],"gender":"male","birthDate":"1980-01-01"}'
+```
+
+## Fork & image updates
+
+To rebuild the custom image after changing the fork:
+
+```bash
+cd hapi-fhir-jpaserver-starter
+docker build -t niccoreyes/aiscream-hapi:latest .
+docker push niccoreyes/aiscream-hapi:latest
+cd .. && docker compose up -d
+```
