@@ -15,6 +15,12 @@ spring:
 hapi:
   fhir:
     validate_resource_status_for_package_upload: false
+
+    enable_repository_validating_interceptor: true
+
+    validation:
+      requests_enabled: true
+
     implementationguides:
       ph_core:
         name: fhir.ph.core
