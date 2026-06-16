@@ -170,4 +170,4 @@ Temporary Items
 **/charts/*.tgz
 
 # generated from `docker compose up`
-hapi.postgress.data
+hapi.postgress.datahapi-fhir-jpaserver-starter/

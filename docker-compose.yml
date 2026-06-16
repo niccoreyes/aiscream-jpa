@@ -1,7 +1,7 @@
 services:
   fhir:
     container_name: hapi
-    image: "hapiproject/hapi:v8.10.0-1" # updated to v8.10.0 for DeviceUsage fix (issue #7800)
+    image: "niccoreyes/aiscream-hapi:latest"
     ports:
       - "8080:8080"
     configs:
