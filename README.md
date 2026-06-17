@@ -35,7 +35,7 @@ starter and built a custom image.
 |---|---|---|
 | `RepositoryValidationInterceptorFactoryR4.java` | `.rejectOnSeverity(WARNING)` + suppression methods | Unknown code systems (e.g. PSGC) now reject instead of warn |
 | `StarterJpaConfig.java` | `registerCustomInterceptors()` moved before `RepositoryValidatingInterceptor` | Dedup must run before validation |
-| `PhEreferralDeduplicationInterceptor.java` | New interceptor | Auto-merges POSTs by identifier match; returns Bundle with merged resource + info OperationOutcome |
+| `PhCoreDeduplicationInterceptor.java` | New interceptor | Auto-merges POSTs by identifier match; returns Bundle with merged resource + info OperationOutcome |
 
 ## Architecture
 
@@ -43,7 +43,7 @@ starter and built a custom image.
 docker-compose.yml
 ├── fhir (custom image: niccoreyes/aiscream-hapi:latest)
 │   ├── application.yaml (IGs, validation, dedup config)
-│   └── PhEreferralDeduplicationInterceptor (auto-merge)
+│   └── PhCoreDeduplicationInterceptor (auto-merge)
 └── db (postgres:17.2-bookworm)
 ```
 
@@ -305,7 +305,7 @@ hapi:
     enable_repository_validating_interceptor: true  # auto-validation
     custom-bean-packages: ph.ereferral.interceptor   # scan dedup interceptor
     custom-interceptor-classes:
-      - ph.ereferral.interceptor.PhEreferralDeduplicationInterceptor
+      - ph.ereferral.interceptor.PhCoreDeduplicationInterceptor
     validation:
       requests_enabled: false  # must be false: RequestValidatingInterceptor
                                # runs before PRE_HANDLED hooks

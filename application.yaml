@@ -56,7 +56,7 @@ hapi:
       - https://loinc.org/*
     custom-bean-packages: ph.ereferral.interceptor
     custom-interceptor-classes:
-      - ph.ereferral.interceptor.PhEreferralDeduplicationInterceptor
+      - ph.ereferral.interceptor.PhCoreDeduplicationInterceptor
 
     remote_terminology_service:
       all:
