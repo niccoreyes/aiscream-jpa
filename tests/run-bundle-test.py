@@ -5,7 +5,7 @@ Exercises:
   - Individual Patient create (profile validation)
   - Transaction Bundle with PH Core Observations (BP + lab)
   - Transaction Bundle containing an existing Patient + Observations
-    (documents that in-Bundle patients are NOT deduped — known limitation)
+    (verifies transaction-level dedup: POST → PUT conversion, no duplicate)
   - Identifier-based dedup on duplicate individual Patient POST
   - Verification searches
   - Markdown log output
@@ -307,13 +307,11 @@ def main():
        "`urn:uuid:patient-bt-bundle`)")
     fh("3. Hemoglobin observation (same reference)")
     fh("")
-    fh("**Important:** The dedup interceptor only fires for individual "
-       "`POST /Patient` calls (operation type `CREATE`). It does **NOT** "
-       "fire for Patients inside a transaction `Bundle` "
-       "(operation type `TRANSACTION`). This is a known HAPI 8.8.0 limitation "
-       "— the `SERVER_INCOMING_REQUEST_PRE_HANDLED` hook receives "
-       "`RestOperationTypeEnum.TRANSACTION`, not `CREATE`, for transaction "
-       "entries.")
+    fh("**Important:** As of this build, the dedup interceptor also handles "
+       "transaction Bundles. For matching Patient/Practitioner/Organization "
+       "entries, it changes the request from `POST` to `PUT` against the "
+       "existing resource ID, so the entry becomes an update rather than a "
+       "duplicate create.")
     patient_plus_obs = build_patient_plus_obs_bundle()
     code4, resp4 = fhir_post("", patient_plus_obs,
                               label="POST / (Bundle with Patient + Obs)")
@@ -335,29 +333,33 @@ def main():
     fh("---")
 
     # ── 5. Verify Patient count after in-Bundle Patient POST ───────────────
-    fh("## 5. Search Patients by Identifier — Check for Duplicates")
+    fh("## 5. Search Patients by Identifier — Check Dedup Worked")
     fh("")
     fh("Search for all Patients with the PhilHealth identifier "
-       "`{patient_id_short}`. Because the dedup interceptor does not fire "
-       "inside transactions, we expect **2 Patients** now:",
+       "`{patient_id_short}`. Transaction dedup should have converted the "
+       "Patient entry from POST to PUT, so only **1 Patient** exists:",
        patient_id_short=PATIENT_ID)
     fh("")
-    fh("1. The original Patient `{patient_id}` (created in step 1)",
+    fh("- `{patient_id}` (the original, updated with merged fields from step 4)",
        patient_id=patient_id)
-    fh("2. A NEW duplicate Patient (created inside the transaction Bundle in step 4)")
     mid_search = fhir_get(
         f"/Patient?identifier={PHILHEALTH_ID_SYSTEM}|{PATIENT_ID}")
     mid_total = extract_total(mid_search)
     mid_ids = extract_patient_ids(mid_search)
-    verify(f"2 Patients exist with this identifier (in-Bundle Patient "
-           f"NOT deduped)",
-           mid_total == 2, f"total={mid_total}, ids={mid_ids}")
+    verify(f"Only 1 Patient exists (transaction dedup worked)",
+           mid_total == 1, f"total={mid_total}, ids={mid_ids}")
 
-    if mid_total >= 2:
+    if mid_total == 1:
+        p = mid_search["entry"][0]["resource"]
         fh("")
-        fh("**Conclusion:** Dedup only fires for individual resource POSTs. "
-           "Patients inside a transaction Bundle are stored as new resources "
-           "even when they match an existing identifier.")
+        fh("**Updated Patient attributes after transaction dedup:**")
+        fh(f"- **id:** `{p.get('id')}`")
+        fh(f"- **gender:** `{p.get('gender')}` (expected: other — incoming from Bundle wins)")
+        n = p.get("name", [{}])[0]
+        fh(f"- **name:** `{n.get('family')} {' '.join(n.get('given', []))}`"
+           f" (expected: BundleTest InBundleDuplicate — incoming wins)")
+        fh(f"- **birthDate:** `{p.get('birthDate')}`"
+           f" (expected: 1985-05-20 — preserved from original)")
     fh("---")
 
     # ── 6. Individual duplicate POST (dedup should still work) ─────────────
@@ -406,16 +408,16 @@ def main():
     # ── 7. Final Verification ──────────────────────────────────────────────
     fh("## 7. Final Verification — Search Patient by Identifier")
     fh("")
-    fh("After the individual dedup POST (step 6), the individual duplicate "
-       "was merged into the latest existing Patient. We still have the "
-       "in-Bundle duplicate from step 4, so expect **2 Patients**.")
+    fh("After the individual dedup POST (step 6), the duplicate was merged into "
+       "the existing Patient. Since transaction dedup also worked (step 4-5), "
+       "there was never a duplicate to begin with. Expect **1 Patient**.")
     final_search = fhir_get(
         f"/Patient?identifier={PHILHEALTH_ID_SYSTEM}|{PATIENT_ID}")
     final_total = extract_total(final_search)
     final_ids = extract_patient_ids(final_search)
-    verify(f"Exactly 2 Patients exist (1 original + 1 in-Bundle duplicate "
-           f"— individual dedup reduced 3→2)",
-           final_total == 2, f"total={final_total}, ids={final_ids}")
+    verify(f"Exactly 1 Patient exists (dedup worked at both individual and "
+           f"transaction level)",
+           final_total == 1, f"total={final_total}, ids={final_ids}")
 
     if final_total == 2:
         p = final_search["entry"][0]["resource"]
@@ -440,22 +442,32 @@ def main():
     fh("| 2 | Bundle POST (Observations only) | 200 OK, 2 Obs created | Pass |")
     fh("| 3 | Observation search | 2 found | Pass |")
     fh("| 4 | Bundle POST (Patient + Observations) — Patient already exists "
-       "| Patient NOT deduped, duplicate created | "
-       "Documented limitation |")
-    fh("| 5 | Post-Bundle Patient count | 2 Patients (original + in-Bundle "
-       "clone) | Pass |")
+       "| Transaction dedup converts POST→PUT, no duplicate created | Pass |")
+    fh("| 5 | Post-Bundle Patient count | 1 Patient (original, updated "
+       "by PUT) | Pass |")
     fh("| 6 | Individual duplicate Patient POST | 200 OK, Bundle with merged "
        "resource + info OO | Pass |")
-    fh("| 7 | Final Patient count | 2 Patients (individual dedup merged one, "
-       "in-Bundle clone remains) | Pass |")
+    fh("| 7 | Final Patient count | 1 Patient (no duplicates at any level) "
+       "| Pass |")
     fh("")
     fh("### Key finding")
     fh("")
-    fh("The PH eReferral dedup interceptor hooks `SERVER_INCOMING_REQUEST_PRE_HANDLED` "
-       "and only fires for `RestOperationTypeEnum.CREATE`. Transaction Bundles "
-       "have operation type `TRANSACTION`, so Patients created inside a "
-       "transaction are **NOT** deduped. This is a known limitation of the "
-       "current implementation.")
+    fh("Transaction dedup now works. The `SERVER_INCOMING_REQUEST_PRE_HANDLED` "
+       "hook handles both `CREATE` and `TRANSACTION` operations:")
+    fh("")
+    fh("- **Individual POST (`CREATE`):** Merge via DAO, throw "
+       "`DeduplicationMatchedException`, return Bundle with merged resource + "
+       "informational `OperationOutcome` via `SERVER_OUTGOING_FAILURE_OPERATIONOUTCOME`.")
+    fh("- **Transaction Bundle (`TRANSACTION`):** Iterate entries, find "
+       "matching Patient/Practitioner/Organization, merge in-memory, change "
+       "the entry's request from `POST` to `PUT` against the existing resource "
+       "ID. The transaction processes the Bundle normally — the Patient gets "
+       "updated (not duplicated) and Observations are created.")
+    fh("")
+    fh("This is the most FHIR-compliant approach: the client receives a "
+       "standard transaction-response Bundle showing `200 OK` for the updated "
+       "Patient and `201 Created` for new Observations — no duplicate resources "
+       "are created.")
     fh("")
     fh(f"Generated by `tests/run-bundle-test.py` on {datetime.now().isoformat()}")
 

@@ -1,8 +1,8 @@
 # Bundle Transaction Test — PH eReferral HAPI FHIR
 
-**Date:** 2026-06-17T10:17:58.804645
+**Date:** 2026-06-17T10:31:37.504355
 **Server:** http://localhost:8080/fhir
-**Patient identifier:** `BT-PATIENT-20260617-101758`
+**Patient identifier:** `BT-PATIENT-20260617-103137`
 
 ---
 ## 1. Create Individual Patient
@@ -23,7 +23,7 @@ Create a fresh Patient via individual `POST /Patient` with PH eReferral profile.
   "identifier": [
     {
       "system": "http://philhealth.gov.ph/fhir/Identifier/philhealth-id",
-      "value": "BT-PATIENT-20260617-101758"
+      "value": "BT-PATIENT-20260617-103137"
     }
   ],
   "name": [
@@ -44,10 +44,10 @@ Create a fresh Patient via individual `POST /Patient` with PH eReferral profile.
 ```json
 {
   "resourceType": "Patient",
-  "id": "11553",
+  "id": "11703",
   "meta": {
     "versionId": "1",
-    "lastUpdated": "2026-06-17T02:17:58.833+00:00",
+    "lastUpdated": "2026-06-17T02:31:37.527+00:00",
     "profile": [
       "urn://example.com/ph-ereferral/fhir/StructureDefinition/ereferral-patient"
     ]
@@ -55,7 +55,7 @@ Create a fresh Patient via individual `POST /Patient` with PH eReferral profile.
   "identifier": [
     {
       "system": "http://philhealth.gov.ph/fhir/Identifier/philhealth-id",
-      "value": "BT-PATIENT-20260617-101758"
+      "value": "BT-PATIENT-20260617-103137"
     }
   ],
   "name": [
@@ -71,12 +71,12 @@ Create a fresh Patient via individual `POST /Patient` with PH eReferral profile.
 }
 ```
 
-**Extracted Patient ID:** `11553`
-- **[PASS]** Patient created (HTTP 201) → `11553`
+**Extracted Patient ID:** `11703`
+- **[PASS]** Patient created (HTTP 201) → `11703`
 ---
 ## 2. POST Transaction Bundle (BP + Hemoglobin)
 
-POST a `Bundle` of type `transaction` with two Observations — Blood Pressure panel and Hemoglobin — referencing `11553`.
+POST a `Bundle` of type `transaction` with two Observations — Blood Pressure panel and Hemoglobin — referencing `11703`.
 ### POST / (Bundle) 
 
 **Request:**
@@ -118,7 +118,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
           "text": "Blood pressure panel"
         },
         "subject": {
-          "reference": "Patient/11553"
+          "reference": "Patient/11703"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "component": [
@@ -191,7 +191,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
           "text": "Hemoglobin"
         },
         "subject": {
-          "reference": "Patient/11553"
+          "reference": "Patient/11703"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "valueQuantity": {
@@ -213,7 +213,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
 ```json
 {
   "resourceType": "Bundle",
-  "id": "26984bf1-5849-4513-b772-e799ed702d0b",
+  "id": "605f630e-2bd4-454d-8274-753fc294a5b5",
   "type": "transaction-response",
   "link": [
     {
@@ -225,9 +225,9 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/11554/_history/1",
+        "location": "Observation/11704/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T02:18:02.259+00:00",
+        "lastModified": "2026-06-17T02:31:41.965+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -243,7 +243,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/11554/_history/1\". Took 2,307ms."
+              "diagnostics": "Successfully created resource \"Observation/11704/_history/1\". Took 4,255ms."
             }
           ]
         }
@@ -252,9 +252,9 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/11555/_history/1",
+        "location": "Observation/11705/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T02:18:02.259+00:00",
+        "lastModified": "2026-06-17T02:31:41.965+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -270,7 +270,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/11555/_history/1\". Took 465ms."
+              "diagnostics": "Successfully created resource \"Observation/11705/_history/1\". Took 742ms."
             }
           ]
         }
@@ -283,34 +283,34 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
 - **[PASS]** Bundle transaction accepted (HTTP 200) 
 ---
 ## 3. Search Observations for this Patient
-### GET /Observation?subject=Patient/11553
+### GET /Observation?subject=Patient/11703
 
 **Response:**
 
 ```json
 {
   "resourceType": "Bundle",
-  "id": "92c68c60-42ae-4ab3-b142-67c0f3b6a282",
+  "id": "4d3af83f-e255-4418-9d98-ce9a612e4490",
   "meta": {
-    "lastUpdated": "2026-06-17T02:18:05.145+00:00"
+    "lastUpdated": "2026-06-17T02:31:47.078+00:00"
   },
   "type": "searchset",
   "total": 2,
   "link": [
     {
       "relation": "self",
-      "url": "http://localhost:8080/fhir/Observation?subject=Patient%2F11553"
+      "url": "http://localhost:8080/fhir/Observation?subject=Patient%2F11703"
     }
   ],
   "entry": [
     {
-      "fullUrl": "http://localhost:8080/fhir/Observation/11554",
+      "fullUrl": "http://localhost:8080/fhir/Observation/11704",
       "resource": {
         "resourceType": "Observation",
-        "id": "11554",
+        "id": "11704",
         "meta": {
           "versionId": "1",
-          "lastUpdated": "2026-06-17T02:18:02.259+00:00",
+          "lastUpdated": "2026-06-17T02:31:41.965+00:00",
           "profile": [
             "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-observation"
           ]
@@ -338,7 +338,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
           "text": "Blood pressure panel"
         },
         "subject": {
-          "reference": "Patient/11553"
+          "reference": "Patient/11703"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "component": [
@@ -379,13 +379,13 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
       }
     },
     {
-      "fullUrl": "http://localhost:8080/fhir/Observation/11555",
+      "fullUrl": "http://localhost:8080/fhir/Observation/11705",
       "resource": {
         "resourceType": "Observation",
-        "id": "11555",
+        "id": "11705",
         "meta": {
           "versionId": "1",
-          "lastUpdated": "2026-06-17T02:18:02.259+00:00",
+          "lastUpdated": "2026-06-17T02:31:41.965+00:00",
           "profile": [
             "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-observation"
           ]
@@ -413,7 +413,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
           "text": "Hemoglobin"
         },
         "subject": {
-          "reference": "Patient/11553"
+          "reference": "Patient/11703"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "valueQuantity": {
@@ -435,11 +435,11 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
 
 POST a `Bundle` of type `transaction` that contains:
 
-1. A Patient with the **same PhilHealth identifier** as the already-created Patient `11553` (name: InBundleDuplicate, gender: other)
+1. A Patient with the **same PhilHealth identifier** as the already-created Patient `11703` (name: InBundleDuplicate, gender: other)
 2. Blood Pressure observation (referencing the in-Bundle Patient via `urn:uuid:patient-bt-bundle`)
 3. Hemoglobin observation (same reference)
 
-**Important:** The dedup interceptor only fires for individual `POST /Patient` calls (operation type `CREATE`). It does **NOT** fire for Patients inside a transaction `Bundle` (operation type `TRANSACTION`). This is a known HAPI 8.8.0 limitation — the `SERVER_INCOMING_REQUEST_PRE_HANDLED` hook receives `RestOperationTypeEnum.TRANSACTION`, not `CREATE`, for transaction entries.
+**Important:** As of this build, the dedup interceptor also handles transaction Bundles. For matching Patient/Practitioner/Organization entries, it changes the request from `POST` to `PUT` against the existing resource ID, so the entry becomes an update rather than a duplicate create.
 ### POST / (Bundle with Patient + Obs) 
 
 **Request:**
@@ -461,7 +461,7 @@ POST a `Bundle` of type `transaction` that contains:
         "identifier": [
           {
             "system": "http://philhealth.gov.ph/fhir/Identifier/philhealth-id",
-            "value": "BT-PATIENT-20260617-101758"
+            "value": "BT-PATIENT-20260617-103137"
           }
         ],
         "name": [
@@ -607,7 +607,7 @@ POST a `Bundle` of type `transaction` that contains:
 ```json
 {
   "resourceType": "Bundle",
-  "id": "5b76f16d-c2a8-41f8-ad8e-b4ab05c62341",
+  "id": "8ec0d3dc-3f17-46f2-b098-9387d349f1eb",
   "type": "transaction-response",
   "link": [
     {
@@ -618,10 +618,9 @@ POST a `Bundle` of type `transaction` that contains:
   "entry": [
     {
       "response": {
-        "status": "201 Created",
-        "location": "Patient/11556/_history/1",
-        "etag": "1",
-        "lastModified": "2026-06-17T02:18:05.231+00:00",
+        "status": "200 OK",
+        "location": "Patient/11703/_history/2",
+        "etag": "2",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -632,12 +631,12 @@ POST a `Bundle` of type `transaction` that contains:
                 "coding": [
                   {
                     "system": "https://hapifhir.io/fhir/CodeSystem/hapi-fhir-storage-response-code",
-                    "code": "SUCCESSFUL_CREATE",
-                    "display": "Create succeeded."
+                    "code": "SUCCESSFUL_UPDATE",
+                    "display": "Update succeeded."
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Patient/11556/_history/1\". Took 298ms."
+              "diagnostics": "Successfully updated resource \"Patient/11703/_history/2\"."
             }
           ]
         }
@@ -646,9 +645,9 @@ POST a `Bundle` of type `transaction` that contains:
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/11557/_history/1",
+        "location": "Observation/11706/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T02:18:05.231+00:00",
+        "lastModified": "2026-06-17T02:31:47.185+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -664,7 +663,7 @@ POST a `Bundle` of type `transaction` that contains:
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/11557/_history/1\". Took 34ms."
+              "diagnostics": "Successfully created resource \"Observation/11706/_history/1\". Took 22ms."
             }
           ]
         }
@@ -673,9 +672,9 @@ POST a `Bundle` of type `transaction` that contains:
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/11558/_history/1",
+        "location": "Observation/11707/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T02:18:05.231+00:00",
+        "lastModified": "2026-06-17T02:31:47.185+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -691,7 +690,7 @@ POST a `Bundle` of type `transaction` that contains:
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/11558/_history/1\". Took 21ms."
+              "diagnostics": "Successfully created resource \"Observation/11707/_history/1\". Took 16ms."
             }
           ]
         }
@@ -702,44 +701,43 @@ POST a `Bundle` of type `transaction` that contains:
 ```
 
 - **[PASS]** Bundle accepted (HTTP 200) → Patient was created as a NEW resource (duplicate IDENTIFIER, different RESOURCE ID)
-- Entry `1` → HTTP `201 Created`
+- Entry `2` → HTTP `200 OK`
 - Entry `1` → HTTP `201 Created`
 - Entry `1` → HTTP `201 Created`
 ---
-## 5. Search Patients by Identifier — Check for Duplicates
+## 5. Search Patients by Identifier — Check Dedup Worked
 
-Search for all Patients with the PhilHealth identifier `BT-PATIENT-20260617-101758`. Because the dedup interceptor does not fire inside transactions, we expect **2 Patients** now:
+Search for all Patients with the PhilHealth identifier `BT-PATIENT-20260617-103137`. Transaction dedup should have converted the Patient entry from POST to PUT, so only **1 Patient** exists:
 
-1. The original Patient `11553` (created in step 1)
-2. A NEW duplicate Patient (created inside the transaction Bundle in step 4)
-### GET /Patient?identifier=http://philhealth.gov.ph/fhir/Identifier/philhealth-id|BT-PATIENT-20260617-101758
+- `11703` (the original, updated with merged fields from step 4)
+### GET /Patient?identifier=http://philhealth.gov.ph/fhir/Identifier/philhealth-id|BT-PATIENT-20260617-103137
 
 **Response:**
 
 ```json
 {
   "resourceType": "Bundle",
-  "id": "2a5ba05f-4b3d-4f0a-894d-32899602a401",
+  "id": "23dde447-90f5-4a05-b021-fd60646335f9",
   "meta": {
-    "lastUpdated": "2026-06-17T02:18:05.626+00:00"
+    "lastUpdated": "2026-06-17T02:31:47.860+00:00"
   },
   "type": "searchset",
-  "total": 2,
+  "total": 1,
   "link": [
     {
       "relation": "self",
-      "url": "http://localhost:8080/fhir/Patient?identifier=http%3A%2F%2Fphilhealth.gov.ph%2Ffhir%2FIdentifier%2Fphilhealth-id%7CBT-PATIENT-20260617-101758"
+      "url": "http://localhost:8080/fhir/Patient?identifier=http%3A%2F%2Fphilhealth.gov.ph%2Ffhir%2FIdentifier%2Fphilhealth-id%7CBT-PATIENT-20260617-103137"
     }
   ],
   "entry": [
     {
-      "fullUrl": "http://localhost:8080/fhir/Patient/11553",
+      "fullUrl": "http://localhost:8080/fhir/Patient/11703",
       "resource": {
         "resourceType": "Patient",
-        "id": "11553",
+        "id": "11703",
         "meta": {
-          "versionId": "1",
-          "lastUpdated": "2026-06-17T02:17:58.833+00:00",
+          "versionId": "2",
+          "lastUpdated": "2026-06-17T02:31:47.185+00:00",
           "profile": [
             "urn://example.com/ph-ereferral/fhir/StructureDefinition/ereferral-patient"
           ]
@@ -747,40 +745,7 @@ Search for all Patients with the PhilHealth identifier `BT-PATIENT-20260617-1017
         "identifier": [
           {
             "system": "http://philhealth.gov.ph/fhir/Identifier/philhealth-id",
-            "value": "BT-PATIENT-20260617-101758"
-          }
-        ],
-        "name": [
-          {
-            "family": "BundleTest",
-            "given": [
-              "Patient"
-            ]
-          }
-        ],
-        "gender": "male",
-        "birthDate": "1985-05-20"
-      },
-      "search": {
-        "mode": "match"
-      }
-    },
-    {
-      "fullUrl": "http://localhost:8080/fhir/Patient/11556",
-      "resource": {
-        "resourceType": "Patient",
-        "id": "11556",
-        "meta": {
-          "versionId": "1",
-          "lastUpdated": "2026-06-17T02:18:05.231+00:00",
-          "profile": [
-            "urn://example.com/ph-ereferral/fhir/StructureDefinition/ereferral-patient"
-          ]
-        },
-        "identifier": [
-          {
-            "system": "http://philhealth.gov.ph/fhir/Identifier/philhealth-id",
-            "value": "BT-PATIENT-20260617-101758"
+            "value": "BT-PATIENT-20260617-103137"
           }
         ],
         "name": [
@@ -802,9 +767,13 @@ Search for all Patients with the PhilHealth identifier `BT-PATIENT-20260617-1017
 }
 ```
 
-- **[PASS]** 2 Patients exist with this identifier (in-Bundle Patient NOT deduped) total=2, ids=['11553', '11556']
+- **[PASS]** Only 1 Patient exists (transaction dedup worked) total=1, ids=['11703']
 
-**Conclusion:** Dedup only fires for individual resource POSTs. Patients inside a transaction Bundle are stored as new resources even when they match an existing identifier.
+**Updated Patient attributes after transaction dedup:**
+- **id:** `11703`
+- **gender:** `other` (expected: other — incoming from Bundle wins)
+- **name:** `BundleTest InBundleDuplicate` (expected: BundleTest InBundleDuplicate — incoming wins)
+- **birthDate:** `1985-05-20` (expected: 1985-05-20 — preserved from original)
 ---
 ## 6. Individual Duplicate Patient POST (dedup should work)
 
@@ -824,7 +793,7 @@ POST a Patient with the **same PhilHealth identifier** via individual `POST /Pat
   "identifier": [
     {
       "system": "http://philhealth.gov.ph/fhir/Identifier/philhealth-id",
-      "value": "BT-PATIENT-20260617-101758"
+      "value": "BT-PATIENT-20260617-103137"
     }
   ],
   "name": [
@@ -851,10 +820,10 @@ POST a Patient with the **same PhilHealth identifier** via individual `POST /Pat
     {
       "resource": {
         "resourceType": "Patient",
-        "id": "11556",
+        "id": "11703",
         "meta": {
-          "versionId": "2",
-          "lastUpdated": "2026-06-17T02:18:05.664+00:00",
+          "versionId": "3",
+          "lastUpdated": "2026-06-17T02:31:47.887+00:00",
           "profile": [
             "urn://example.com/ph-ereferral/fhir/StructureDefinition/ereferral-patient"
           ]
@@ -862,7 +831,7 @@ POST a Patient with the **same PhilHealth identifier** via individual `POST /Pat
         "identifier": [
           {
             "system": "http://philhealth.gov.ph/fhir/Identifier/philhealth-id",
-            "value": "BT-PATIENT-20260617-101758"
+            "value": "BT-PATIENT-20260617-103137"
           }
         ],
         "name": [
@@ -887,7 +856,7 @@ POST a Patient with the **same PhilHealth identifier** via individual `POST /Pat
           {
             "severity": "information",
             "code": "informational",
-            "diagnostics": "Merged incoming Patient into existing resource Patient/11556"
+            "diagnostics": "Merged incoming Patient into existing resource Patient/11703"
           }
         ]
       },
@@ -904,39 +873,39 @@ POST a Patient with the **same PhilHealth identifier** via individual `POST /Pat
 - **[PASS]** Contains merged Patient resource 
 - **[PASS]** Contains informational OperationOutcome 
 - **[PASS]** OperationOutcome severity is 'information' severity=information
-- Merged into Patient ID: `11556`
+- Merged into Patient ID: `11703`
 ---
 ## 7. Final Verification — Search Patient by Identifier
 
-After the individual dedup POST (step 6), the individual duplicate was merged into the latest existing Patient. We still have the in-Bundle duplicate from step 4, so expect **2 Patients**.
-### GET /Patient?identifier=http://philhealth.gov.ph/fhir/Identifier/philhealth-id|BT-PATIENT-20260617-101758
+After the individual dedup POST (step 6), the duplicate was merged into the existing Patient. Since transaction dedup also worked (step 4-5), there was never a duplicate to begin with. Expect **1 Patient**.
+### GET /Patient?identifier=http://philhealth.gov.ph/fhir/Identifier/philhealth-id|BT-PATIENT-20260617-103137
 
 **Response:**
 
 ```json
 {
   "resourceType": "Bundle",
-  "id": "2a5ba05f-4b3d-4f0a-894d-32899602a401",
+  "id": "23dde447-90f5-4a05-b021-fd60646335f9",
   "meta": {
-    "lastUpdated": "2026-06-17T02:18:05.626+00:00"
+    "lastUpdated": "2026-06-17T02:31:47.860+00:00"
   },
   "type": "searchset",
-  "total": 2,
+  "total": 1,
   "link": [
     {
       "relation": "self",
-      "url": "http://localhost:8080/fhir/Patient?identifier=http%3A%2F%2Fphilhealth.gov.ph%2Ffhir%2FIdentifier%2Fphilhealth-id%7CBT-PATIENT-20260617-101758"
+      "url": "http://localhost:8080/fhir/Patient?identifier=http%3A%2F%2Fphilhealth.gov.ph%2Ffhir%2FIdentifier%2Fphilhealth-id%7CBT-PATIENT-20260617-103137"
     }
   ],
   "entry": [
     {
-      "fullUrl": "http://localhost:8080/fhir/Patient/11553",
+      "fullUrl": "http://localhost:8080/fhir/Patient/11703",
       "resource": {
         "resourceType": "Patient",
-        "id": "11553",
+        "id": "11703",
         "meta": {
-          "versionId": "1",
-          "lastUpdated": "2026-06-17T02:17:58.833+00:00",
+          "versionId": "3",
+          "lastUpdated": "2026-06-17T02:31:47.887+00:00",
           "profile": [
             "urn://example.com/ph-ereferral/fhir/StructureDefinition/ereferral-patient"
           ]
@@ -944,40 +913,7 @@ After the individual dedup POST (step 6), the individual duplicate was merged in
         "identifier": [
           {
             "system": "http://philhealth.gov.ph/fhir/Identifier/philhealth-id",
-            "value": "BT-PATIENT-20260617-101758"
-          }
-        ],
-        "name": [
-          {
-            "family": "BundleTest",
-            "given": [
-              "Patient"
-            ]
-          }
-        ],
-        "gender": "male",
-        "birthDate": "1985-05-20"
-      },
-      "search": {
-        "mode": "match"
-      }
-    },
-    {
-      "fullUrl": "http://localhost:8080/fhir/Patient/11556",
-      "resource": {
-        "resourceType": "Patient",
-        "id": "11556",
-        "meta": {
-          "versionId": "2",
-          "lastUpdated": "2026-06-17T02:18:05.664+00:00",
-          "profile": [
-            "urn://example.com/ph-ereferral/fhir/StructureDefinition/ereferral-patient"
-          ]
-        },
-        "identifier": [
-          {
-            "system": "http://philhealth.gov.ph/fhir/Identifier/philhealth-id",
-            "value": "BT-PATIENT-20260617-101758"
+            "value": "BT-PATIENT-20260617-103137"
           }
         ],
         "name": [
@@ -999,13 +935,7 @@ After the individual dedup POST (step 6), the individual duplicate was merged in
 }
 ```
 
-- **[PASS]** Exactly 2 Patients exist (1 original + 1 in-Bundle duplicate — individual dedup reduced 3→2) total=2, ids=['11553', '11556']
-
-**Latest merged Patient attributes:**
-- **id:** `11553`
-- **gender:** `male` (expected: female — incoming wins)
-- **name:** `BundleTest Patient` (expected: BundleTest DedupSent — incoming wins)
-- **birthDate:** `1985-05-20` (expected: 1985-05-20 — preserved from original)
+- **[PASS]** Exactly 1 Patient exists (dedup worked at both individual and transaction level) total=1, ids=['11703']
 
 ---
 ## Summary
@@ -1015,13 +945,18 @@ After the individual dedup POST (step 6), the individual duplicate was merged in
 | 1 | Individual Patient create | 201 Created | Pass |
 | 2 | Bundle POST (Observations only) | 200 OK, 2 Obs created | Pass |
 | 3 | Observation search | 2 found | Pass |
-| 4 | Bundle POST (Patient + Observations) — Patient already exists | Patient NOT deduped, duplicate created | Documented limitation |
-| 5 | Post-Bundle Patient count | 2 Patients (original + in-Bundle clone) | Pass |
+| 4 | Bundle POST (Patient + Observations) — Patient already exists | Transaction dedup converts POST→PUT, no duplicate created | Pass |
+| 5 | Post-Bundle Patient count | 1 Patient (original, updated by PUT) | Pass |
 | 6 | Individual duplicate Patient POST | 200 OK, Bundle with merged resource + info OO | Pass |
-| 7 | Final Patient count | 2 Patients (individual dedup merged one, in-Bundle clone remains) | Pass |
+| 7 | Final Patient count | 1 Patient (no duplicates at any level) | Pass |
 
 ### Key finding
 
-The PH eReferral dedup interceptor hooks `SERVER_INCOMING_REQUEST_PRE_HANDLED` and only fires for `RestOperationTypeEnum.CREATE`. Transaction Bundles have operation type `TRANSACTION`, so Patients created inside a transaction are **NOT** deduped. This is a known limitation of the current implementation.
+Transaction dedup now works. The `SERVER_INCOMING_REQUEST_PRE_HANDLED` hook handles both `CREATE` and `TRANSACTION` operations:
 
-Generated by `tests/run-bundle-test.py` on 2026-06-17T10:18:05.724119
+- **Individual POST (`CREATE`):** Merge via DAO, throw `DeduplicationMatchedException`, return Bundle with merged resource + informational `OperationOutcome` via `SERVER_OUTGOING_FAILURE_OPERATIONOUTCOME`.
+- **Transaction Bundle (`TRANSACTION`):** Iterate entries, find matching Patient/Practitioner/Organization, merge in-memory, change the entry's request from `POST` to `PUT` against the existing resource ID. The transaction processes the Bundle normally — the Patient gets updated (not duplicated) and Observations are created.
+
+This is the most FHIR-compliant approach: the client receives a standard transaction-response Bundle showing `200 OK` for the updated Patient and `201 Created` for new Observations — no duplicate resources are created.
+
+Generated by `tests/run-bundle-test.py` on 2026-06-17T10:31:47.930579
