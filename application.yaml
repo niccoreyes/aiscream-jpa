@@ -10,7 +10,12 @@ spring:
   jpa:
     properties:
       hibernate.dialect: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
-      hibernate.search.enabled: false
+      hibernate.search.enabled: true
+      hibernate.search.backend.type: lucene
+      hibernate.search.backend.analysis.configurer: ca.uhn.fhir.jpa.search.HapiHSearchAnalysisConfigurers$HapiLuceneAnalysisConfigurer
+      hibernate.search.backend.directory.type: local-filesystem
+      hibernate.search.backend.directory.root: /app/target/lucene_indexes
+      hibernate.search.schema_management.strategy: CREATE
 
 hapi:
   fhir:
@@ -29,6 +34,11 @@ hapi:
         installMode: STORE_AND_INSTALL
         packageUrl: https://build.fhir.org/ig/UP-Manila-SILab/ph-core/package.tgz
         fetchDependencies: true
+        installResourceTypes:
+          - StructureDefinition
+          - SearchParameter
+          - NamingSystem
+          - Subscription
         dependencyExcludes:
            - "hl7.fhir.uv.extensions"
            - "hl7.fhir.uv.extensions.r4"
@@ -40,6 +50,11 @@ hapi:
         installMode: STORE_AND_INSTALL
         packageUrl: https://build.fhir.org/ig/ph-ereferral-organization/ph-ereferral/package.tgz
         fetchDependencies: true
+        installResourceTypes:
+          - StructureDefinition
+          - SearchParameter
+          - NamingSystem
+          - Subscription
         dependencyExcludes:
            - "hl7.fhir.uv.extensions"
            - "hl7.fhir.uv.extensions.r4"
@@ -50,7 +65,13 @@ hapi:
         version: 5.3.0
         reloadExisting: false
         installMode: STORE_AND_INSTALL
-        fetchDependencies: false
+        fetchDependencies: true
+        installResourceTypes:
+          - StructureDefinition
+          - SearchParameter
+        dependencyExcludes:
+           - "hl7.terminology.r5"
+           - "hl7.terminology.r4"
     logical_urls:
       - http://terminology.hl7.org/*
       - https://terminology.hl7.org/*
@@ -60,6 +81,8 @@ hapi:
       - https://unitsofmeasure.org/*
       - http://loinc.org/*
       - https://loinc.org/*
+      - https://psa.gov.ph/*
+      - https://fhir.doh.gov.ph/*
     custom-bean-packages: ph.phcore.interceptor
     custom-interceptor-classes:
       - ph.phcore.interceptor.PhCoreDeduplicationInterceptor
