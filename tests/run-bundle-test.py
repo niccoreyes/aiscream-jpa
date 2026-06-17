@@ -21,7 +21,7 @@ import time
 from datetime import datetime
 from textwrap import dedent
 
-BASE_URL = "http://localhost:8080/fhir"
+BASE_URL = "https://fhirportal.telehealth.ph/eref/fhir"
 TS = datetime.now().strftime("%Y%m%d-%H%M%S")
 REPORT_FILE = f"tests/bundle-transaction-test-{TS}.md"
 OUTPUT = []
@@ -629,7 +629,7 @@ def main():
     verify(f"Only 1 Patient exists (transaction dedup worked)",
            mid_total == 1, f"total={mid_total}, ids={mid_ids}")
 
-    if mid_total == 1:
+    if mid_total == 1 and mid_search.get("entry"):
         p = mid_search["entry"][0]["resource"]
         fh("")
         fh("**Updated Patient attributes after transaction dedup:**")
@@ -699,7 +699,7 @@ def main():
            f"transaction level)",
            final_total == 1, f"total={final_total}, ids={final_ids}")
 
-    if final_total == 2:
+    if final_total == 2 and final_search.get("entry"):
         p = final_search["entry"][0]["resource"]
         fh("")
         fh("**Latest merged Patient attributes:**")
@@ -836,23 +836,17 @@ def main():
     fh("The final merged Patient should reflect the merge strategy: "
        "incoming wins where set, existing preserved where incoming absent, "
        "identifiers unioned.")
-    final_p = final_search["entry"][0]["resource"]
-    c3_ids = [i.get("value") for i in final_p.get("identifier", [])]
-    c3_name = final_p.get("name", [{}])[0]
-    c3_given = " ".join(c3_name.get("given", []))
-
-    verify("Merge: gender=female (incoming from step 6 wins)",
-           final_p.get("gender") == "female",
-           f"gender={final_p.get('gender')}")
-    verify("Merge: birthDate=1985-05-20 (preserved from original)",
-           final_p.get("birthDate") == "1985-05-20",
-           f"birthDate={final_p.get('birthDate')}")
-    verify("Merge: name=DedupSent (incoming from step 6 wins)",
-           "DedupSent" in c3_given,
-           f"given={c3_given}")
-    verify("Merge: identifier union includes both PhilHealth and PhilSys",
-           len(c3_ids) >= 1,
-           f"identifier_count={len(c3_ids)}, ids={c3_ids}")
+    if not final_search.get("entry"):
+        verify("Merge: cannot check — final search returned no entries", False, "no entry key")
+    else:
+        fp = final_search["entry"][0]["resource"]
+        ci = [i.get('value') for i in fp.get('identifier', [])]
+        cn = fp.get('name', [{}])[0]
+        cg = ' '.join(cn.get('given', []))
+        verify("Merge: gender=female (incoming from step 6 wins)", fp.get('gender') == 'female', f"gender={fp.get('gender')}")
+        verify("Merge: birthDate=1985-05-20 (preserved from original)", fp.get('birthDate') == '1985-05-20', f"birthDate={fp.get('birthDate')}")
+        verify("Merge: name=DedupSent (incoming from step 6 wins)", 'DedupSent' in cg, f"given={cg}")
+        verify("Merge: identifier union includes both PhilHealth and PhilSys", len(ci) >= 1, f"identifier_count={len(ci)}, ids={ci}")
     fh("---")
 
     # ═══════════════════════════════════════════════════════════════════════
