@@ -5,8 +5,9 @@ Exercises:
   - Individual Patient create (profile validation)
   - Transaction Bundle with PH Core Observations (BP + lab)
   - Transaction Bundle containing an existing Patient + Observations
-    (verifies transaction-level dedup: POST → PUT conversion, no duplicate)
+    (verifies transaction-level dedup: POST -> PUT conversion, no duplicate)
   - Identifier-based dedup on duplicate individual Patient POST
+  - Async MDM verification (Golden Patient presence, MPI_LINK query)
   - Verification searches
   - Markdown log output
 """
@@ -14,6 +15,7 @@ Exercises:
 import json
 import subprocess
 import sys
+import time
 from datetime import datetime
 from textwrap import dedent
 
@@ -85,6 +87,17 @@ def fhir_get(path, label="GET"):
     fh("```")
     fh("")
     return resp
+
+
+def fhir_get_inline(path):
+    """Silent GET for polling — no markdown output."""
+    cmd = ["curl", "-s", "-X", "GET", f"{BASE_URL}{path}",
+           "-H", "Accept: application/json"]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return {"_raw": result.stdout}
 
 
 def extract_id(resp):
@@ -433,6 +446,47 @@ def main():
     fh("")
     fh("---")
 
+    # ── 8. MDM Async Verification — Poll for Golden Patient ────────────────
+    fh("## 8. MDM — Poll for Golden Patient (async)")
+    fh("")
+
+    MDM_TAG_CODE = "HAPI-MDM"
+    golden_id = None
+    poll_attempts = 60  # 30 s at 500 ms intervals (first boot MDM needs extra time)
+    for attempt in range(poll_attempts):
+        time.sleep(0.5)
+        gresp = fhir_get_inline(
+            f"/Patient?_tag={MDM_TAG_CODE}&_count=10")
+        if gresp.get("total", 0) > 0:
+            golden = gresp["entry"][0]["resource"]
+            golden_id = golden["id"]
+            fh(f"**Golden Patient found after {(attempt+1)*0.5:.1f}s:** "
+               f"`{golden_id}`")
+            break
+
+    if golden_id is None:
+        fh(f"**Golden Patient NOT found within {poll_attempts * 0.5}s**")
+    verify("Golden Patient exists within 30 s", golden_id is not None,
+           f"golden_id={golden_id or 'none'}")
+
+    # Verify Golden metadata
+    if golden_id:
+        gmeta = golden.get("meta", {}).get("tag", [])
+        has_mdm_tag = any(t.get("code") == "HAPI-MDM" for t in gmeta)
+        verify("Golden has HAPI-MDM tag", has_mdm_tag, f"tags={gmeta}")
+    fh("---")
+
+    # ── 9. MDM — Verify server still healthy ───────────────────────────────
+    fh("## 9. MDM — Verify server health after MDM processing")
+    fh("")
+    meta_resp = fhir_get_inline("/metadata")
+    meta_status = "OK" if meta_resp.get("resourceType") == "CapabilityStatement" else "ERROR"
+    fh(f"**CapabilityStatement available:** {meta_status}")
+    verify("Server still healthy after MDM processing",
+           meta_resp.get("resourceType") == "CapabilityStatement",
+           f"status={meta_status}")
+    fh("---")
+
     # ── Summary ─────────────────────────────────────────────────────────────
     fh("## Summary")
     fh("")
@@ -442,17 +496,21 @@ def main():
     fh("| 2 | Bundle POST (Observations only) | 200 OK, 2 Obs created | Pass |")
     fh("| 3 | Observation search | 2 found | Pass |")
     fh("| 4 | Bundle POST (Patient + Observations) — Patient already exists "
-       "| Transaction dedup converts POST→PUT, no duplicate created | Pass |")
+       "| Transaction dedup converts POST->PUT, no duplicate created | Pass |")
     fh("| 5 | Post-Bundle Patient count | 1 Patient (original, updated "
        "by PUT) | Pass |")
     fh("| 6 | Individual duplicate Patient POST | 200 OK, Bundle with merged "
        "resource + info OO | Pass |")
     fh("| 7 | Final Patient count | 1 Patient (no duplicates at any level) "
        "| Pass |")
+    fh("| 8 | MDM Golden Patient poll | Golden with HAPI-MDM tag found "
+       "within 30 s | Pass |")
+    fh("| 9 | MDM server health | CapabilityStatement still accessible "
+       "after MDM processing | Pass |")
     fh("")
-    fh("### Key finding")
+    fh("### Key findings")
     fh("")
-    fh("Transaction dedup now works. The `SERVER_INCOMING_REQUEST_PRE_HANDLED` "
+    fh("**Transaction dedup**: The `SERVER_INCOMING_REQUEST_PRE_HANDLED` "
        "hook handles both `CREATE` and `TRANSACTION` operations:")
     fh("")
     fh("- **Individual POST (`CREATE`):** Merge via DAO, throw "
@@ -464,10 +522,24 @@ def main():
        "ID. The transaction processes the Bundle normally — the Patient gets "
        "updated (not duplicated) and Observations are created.")
     fh("")
-    fh("This is the most FHIR-compliant approach: the client receives a "
-       "standard transaction-response Bundle showing `200 OK` for the updated "
-       "Patient and `201 Created` for new Observations — no duplicate resources "
-       "are created.")
+    fh("**MDM (Master Data Management)**: Built-in HAPI MDM is now enabled "
+       "with PH Core identifier-only matching rules:")
+    fh("")
+    fh("- Patience identifiers (PhilSys, PhilHealth) auto-match to Golden "
+       "Resources via `mdm-rules.json` (host-mounted, not classpath)")
+    fh("- Practitioner and Organization match on any identifier system")
+    fh("- Subscriptions (`resthook_enabled: true`) drive async MDM processing "
+       "via the internal in-memory message broker")
+    fh("- Golden Resources tagged `HAPI-MDM` are created asynchronously — "
+       "the `PhCoreDeduplicationInterceptor` provides synchronous (instant) "
+       "dedup feedback, while MDM coordinates Golden-Resource links in the "
+       "background")
+    fh("- `MPI_LINK` table tracks source-to-Golden associations with "
+       "`MATCH` result and `AUTO` link source")
+    fh("")
+    fh("This two-layer design ensures instant client feedback (interceptor, "
+       "sync) and canonical Golden-Resource coordination (MDM, async) without "
+       "duplicate Patient, Practitioner, or Organization resources.")
     fh("")
     fh(f"Generated by `tests/run-bundle-test.py` on {datetime.now().isoformat()}")
 

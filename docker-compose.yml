@@ -4,6 +4,8 @@ services:
     image: "niccoreyes/aiscream-hapi:latest"
     ports:
       - "8080:8080"
+    volumes:
+      - ./mdm-rules.json:/app/config/mdm-rules.json:ro
     configs:
       - source: hapi
         target: /app/config/application.yaml

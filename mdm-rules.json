@@ -1,0 +1,53 @@
+{
+  "version": "1",
+  "mdmTypes": ["Patient", "Practitioner", "Organization"],
+  "candidateSearchParams": [
+    { "resourceType": "Patient",      "searchParams": ["identifier"] },
+    { "resourceType": "Practitioner", "searchParams": ["identifier"] },
+    { "resourceType": "Organization", "searchParams": ["identifier"] }
+  ],
+  "candidateFilterSearchParams": [],
+  "matchFields": [
+    {
+      "name": "identifier-philsys",
+      "resourceType": "Patient",
+      "resourcePath": "identifier",
+      "matcher": {
+        "algorithm": "IDENTIFIER",
+        "identifierSystem": "https://fhir.doh.gov.ph/phcore/identifier/philsys"
+      }
+    },
+    {
+      "name": "identifier-philhealth",
+      "resourceType": "Patient",
+      "resourcePath": "identifier",
+      "matcher": {
+        "algorithm": "IDENTIFIER",
+        "identifierSystem": "https://fhir.doh.gov.ph/phcore/identifier/philhealth"
+      }
+    },
+    {
+      "name": "identifier-any-practitioner",
+      "resourceType": "Practitioner",
+      "resourcePath": "identifier",
+      "matcher": { "algorithm": "IDENTIFIER" }
+    },
+    {
+      "name": "identifier-any-organization",
+      "resourceType": "Organization",
+      "resourcePath": "identifier",
+      "matcher": { "algorithm": "IDENTIFIER" }
+    }
+  ],
+  "matchResultMap": {
+    "identifier-philsys":            "MATCH",
+    "identifier-philhealth":            "MATCH",
+    "identifier-any-practitioner":  "MATCH",
+    "identifier-any-organization":   "MATCH"
+  },
+  "eidSystems": {
+    "Patient":      "https://fhir.doh.gov.ph/phcore/identifier/philsys",
+    "Practitioner": "*",
+    "Organization": "*"
+  }
+}

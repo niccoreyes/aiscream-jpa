@@ -350,4 +350,171 @@ output omits the field (as if never set).
   birthDate=1990-06-15, name=Original) and an incoming Patient (gender=female,
   no birthDate, name=Incoming)
 - **THEN** the merged result has gender=female (incoming wins), name=Incoming
-  (incoming wins), and birthDate=1990-06-15 (existing preserved)
+  (incoming wins), and birthDate=1990-06-15   (existing preserved)
+
+---
+
+### Requirement: Built-in HAPI MDM enabled with PH-specific rules
+
+The system SHALL enable HAPI's built-in MDM (`hapi.fhir.mdm_enabled: true`)
+and load `mdm-rules.json` from the host filesystem at
+`/app/config/mdm-rules.json` mounted via `docker-compose.yml`.
+
+The rules SHALL:
+1. Apply to `Patient`, `Practitioner`, `Organization` (`mdmTypes`)
+2. Use only `IDENTIFIER` matchers matching PH Core v0.2.0 identifier slices
+3. Map every identifier match to `MATCH` (not `POSSIBLE_MATCH`) — all matches
+   are auto-linked; no manual review queue
+4. Search candidates on `identifier` to minimize database scans
+5. Declare EID systems:
+   - `Patient` → `https://fhir.doh.gov.ph/phcore/identifier/philsys`
+   - `Practitioner` → wildcard (`*`) — any identifier system is considered an EID
+   - `Organization` → wildcard (`*`) — any identifier system is considered an EID
+6. Be a JSON file hosted at the `aiscream-jpa` repository root and mounted
+   read‑only into the container — not baked into the JAR classpath
+
+#### Scenario: Patient matched on PhilSys gains Golden Resource
+- **WHEN** a Patient is POSTed with a PhilSys identifier matching an
+  existing Patient
+- **THEN** HAPI MDM asynchronously links both source Patients to the same
+  Golden Patient resource (tagged `HAPI-MDM`)
+- **AND** the Golden Patient acquires the merged attributes from both sources
+  via the interceptor's in-place merge
+
+#### Scenario: Practitioner matched on any identifier
+- **WHEN** a Practitioner is POSTed with an identifier matching an
+  existing Practitioner
+- **THEN** MDM creates/links a Golden Practitioner
+
+#### Scenario: Organization matched on PH Core identifier slices
+- **WHEN** an Organization is POSTed with an NHFR, HCPN, PAN, or PEN
+  identifier matching an existing Organization
+- **THEN** MDM creates/links a Golden Organization
+
+#### Scenario: No identifier match — Golden still created
+- **WHEN** a Patient/Practitioner/Organization is POSTed with no
+  matching identifier
+- **THEN** HAPI MDM creates a new Golden for the source resource
+  (standard 1:1 initialization) — no duplicate source resources exist
+
+---
+
+### Requirement: Resthook subscription enables async MDM
+
+The system SHALL enable `hapi.fhir.subscription.resthook_enabled: true`.
+MDM depends on subscriptions to deliver resource-create and resource-update
+events to the internal `mdm-patient`, `mdm-practitioner`, and
+`mdm-organization` channels via the in-memory message broker.
+
+#### Scenario: Subscriptions started on boot
+- **WHEN** the server starts with `subscription.resthook_enabled: true`
+  and `mdm_enabled: true`
+- **THEN** the MDM subscriptions are registered with the subscription
+  engine
+- **AND** resource writes are delivered to the internal `mdm` queue
+
+#### Scenario: Resource write triggers MDM processing
+- **WHEN** a Patient is POSTed (individual or within a transaction Bundle)
+- **THEN** the `mdm-patient` subscription delivers the resource to the
+  MDM consumer within the polling interval (5000 ms default)
+- **AND** MDM evaluates candidate matches, creates or links Golden
+  resources, and populates the `MPI_LINK` table
+
+---
+
+### Requirement: Survivorship propagates merged source data to Golden
+
+The system SHALL configure `MdmSettings.setPreventEidUpdates(false)` and
+`MdmSettings.setPreventMultipleEids(false)` so that Golden Resources may
+accumulate EIDs and receive field updates from linked source resources.
+
+The PhCoreDeduplicationInterceptor handles in-place merging synchronously
+(identifier match found → merged into existing source → source persisted).
+MDM reads the already-merged source and applies default field-by-field
+survivorship: non-null source fields populate the Golden, and EIDs flow
+from source to Golden.
+
+#### Scenario: Merged source feeds Golden
+- **WHEN** the interceptor merges an incoming Patient into an existing
+  Patient (in-place merge via DAO), and the merged source is then
+  delivered to the `mdm-patient` subscription
+- **THEN** the Golden Patient reflects the merged source's attributes
+  — name, gender, birthDate, address, etc. — as populated from the
+  richer merged source
+
+#### Scenario: Subsequent update propagates new fields
+- **WHEN** a linked source Patient is updated (via individual PUT or
+  transaction Bundle PUT from the interceptor's POST→PUT conversion)
+- **THEN** the Golden Patient's fields that were previously empty
+  are populated from the updated source
+- **AND** the Golden's EID (PhilSys) remains stable
+
+---
+
+### Requirement: mdm-rules.json loaded from host-mounted volume
+
+The system SHALL load `mdm-rules.json` from the host filesystem via
+docker-compose `volumes` binding (`./mdm-rules.json:/app/config/mdm-rules.json:ro`),
+not from the JAR classpath. The fork's `application.yaml` declares
+`mdm_rules_json_location: "file:/app/config/mdm-rules.json"`.
+
+Operators can edit the file on the host and restart the container to
+apply rule changes without rebuilding the Docker image.
+
+#### Scenario: Host file read on startup
+- **WHEN** the `hapi` container starts with the host file present
+  at `./mdm-rules.json`
+- **THEN** MDM rules are loaded and applied
+
+#### Scenario: Missing file triggers startup error
+- **WHEN** the `hapi` container starts without a valid
+  `mdm-rules.json` at the configured path
+- **THEN** MDM fails to initialize and the server reports a
+  configuration error
+
+---
+
+### Requirement: PhCoreDeduplicationInterceptor works alongside MDM
+
+The existing `PhCoreDeduplicationInterceptor` SHALL remain active
+alongside built-in HAPI MDM, providing **synchronous** identifier-match
+feedback to clients (HTTP 200 with collection Bundle). MDM provides
+**asynchronous** Golden-Resource coordination via subscriptions.
+
+The two layers MUST NOT conflict:
+1. Interceptor merges in-place via DAO (sync, PRE_HANDLED)
+2. Validator checks PH Core profile conformance on the merged resource
+3. Merged source is persisted
+4. MDM subscription fires → link source to Golden, apply survivorship
+
+#### Scenario: POST returns 200 immediately; Golden appears async
+- **WHEN** a duplicate Patient is POSTed individually
+- **THEN** the interceptor returns HTTP 200 with a collection Bundle
+  (synchronous dedup feedback)
+- **AND** within the polling interval (~5 s), MDM creates/links the
+  Golden Patient with `HAPI-MDM` tag
+
+#### Scenario: Transaction Bundle entry deduped, then linked
+- **WHEN** a transaction `Bundle` is POSTed containing a Patient
+  matching an existing Patient
+- **THEN** the interceptor converts the entry from `POST` to `PUT`
+  against the existing Patient ID (`fullUrl` preserved)
+- **AND** MDM links the canonical Patient to its Golden (no duplicate
+  Golden if one already exists with the same EID)
+
+---
+
+### Requirement: MPI_LINK table generated and queryable
+
+The system SHALL create the `MPI_LINK` table on startup when
+`mdm_enabled: true` and make link records queryable via
+`GET /$mdm/links?resourceType=Patient&goldenResourceId={id}`.
+
+#### Scenario: Matching sources share one Golden
+- **WHEN** two Patients with the same PhilSys identifier are POSTed at
+  different times
+- **THEN** both source Patient records have an `MPI_LINK` row pointing
+  to the same Golden Patient
+- **AND** each link's `matchResult` is `MATCH`
+- **AND** each link's `linkSource` is `AUTO`
+

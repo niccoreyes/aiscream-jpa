@@ -58,6 +58,11 @@ hapi:
     custom-interceptor-classes:
       - ph.phcore.interceptor.PhCoreDeduplicationInterceptor
 
+    mdm_enabled: true
+
+    subscription:
+      resthook_enabled: true
+
     remote_terminology_service:
       all:
         system: '*'
