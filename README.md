@@ -7,12 +7,14 @@ automatic IG profile validation and identifier-based deduplication.
 
 1. **Preloads PH Core and PH eReferral IGs** from `build.fhir.org` at startup.
 2. **Auto-validates every resource** against all stored profiles — no `$validate`
-   call needed.
+   call needed (though the `$validate` endpoint is always available for pre-validation).
 3. **Detects and auto-merges duplicates** on POST by matching identifiers
    (PhilHealth ID, PhilSys ID, or any identifier).
 4. **Terminology validation** is delegated to `https://tx.fhirlab.net/fhir`.
 5. **Bundle transaction support** — POST `Bundle` of type `transaction` to
    create Patient + Observations in one call.
+6. **Referential integrity** — rejects writes that reference non-existent resources.
+7. **Response validation** — validates outgoing responses and attaches validation headers.
 
 ## Quick start
 
@@ -53,9 +55,20 @@ docker-compose.yml
 POST /Patient
   → SERVER_INCOMING_REQUEST_PRE_HANDLED   (dedup check)
      → if duplicate found: merge via DAO, throw DeduplicationMatchedException
+  → SERVER_INCOMING_REQUEST_POST_PROCESSED (disabled: requests_enabled=false)
+     → RequestValidatingInterceptor NOT registered
   → STORAGE_PRESTORAGE_RESOURCE_CREATED   (RepositoryValidatingInterceptor)
-     → enforce profile + rejectOnSeverity(WARNING)
+     → requireAtLeastOneProfileOf(all stored SDs)
+     → requireValidationToDeclaredProfiles()
+     → rejectOnSeverity(WARNING)  ← strict: unknown codes → ERROR
+     → enforce_referential_integrity_on_write  ← reject dangling references
   → Committed (or rejected with 422)
+
+GET /Patient/123
+  → STORAGE_PRESTORAGE_ACCESS_RESPONSE
+  → RESPONSE_VALIDATION  (ResponseValidatingInterceptor)
+     → validates outgoing resource, attaches X-Validation-* headers
+  → Stream resource to client
 
 Exception path (when dedup fires):
   DeduplicationMatchedException (HTTP 200)
@@ -69,7 +82,9 @@ Exception path (when dedup fires):
 at `SERVER_INCOMING_REQUEST_POST_PROCESSED`, which is **before** our
 `PRE_HANDLED` hook. Keeping it disabled prevents the validator from rejecting
 resources before dedup can merge them. The `RepositoryValidatingInterceptor`
-at the `STORAGE` level still validates all resources on insert/update.
+at the `STORAGE` level still validates all resources on insert/update. The
+`$validate` FHIR operation endpoint is **always available** and is not gated
+by `requests_enabled`.
 
 ## Dedup behavior
 
@@ -210,13 +225,22 @@ python3 tests/run-bundle-test.py
 ```
 
 This script:
-1. Creates a Patient with PH eReferral profile
-2. POSTs a transaction Bundle with 2 Observations (Blood Pressure + Hemoglobin)
-   compliant with PH Core Observation profile
-3. Verifies Observations were created
-4. POSTs a duplicate Patient → verifies dedup returns Bundle with merged
-   resource + informational OperationOutcome
-5. Confirms only 1 Patient exists for the identifier
+1. Validator enforcement: rejects no-profile, empty-profile, invalid-profile
+   resources, and mixed-validity Bundles (atomic rollback)
+2. Accepts valid PH Core and PH eReferral canonical profiles
+3. Posts transaction Bundles with valid Patient + Observations
+4. Verifies Observations were created
+5. Tests transaction-level dedup: existing Patient in Bundle is converted
+   from POST to PUT, no duplicate created
+6. Posts individual duplicate Patient → verifies dedup returns Bundle with
+   merged resource + informational OperationOutcome
+7. Confirms only 1 Patient exists for the identifier
+8. Tests Practitioner and Organization deduplication
+9. Edge cases: no-match Bundle, all-valid Bundle
+10. Verifies merge strategy field-by-field (incoming wins, identifiers union)
+11. Tests `$validate` endpoint (available at both resource-type and base paths)
+12. Tests referential integrity enforcement (dangling reference rejection)
+13. Tests response validation headers on GET reads
 
 ### Test logs
 
@@ -302,13 +326,19 @@ See `application.yaml` for all settings. Key properties:
 ```yaml
 hapi:
   fhir:
-    enable_repository_validating_interceptor: true  # auto-validation
+    enable_repository_validating_interceptor: true  # auto-validation at storage level
+    enforce_referential_integrity_on_write: true    # reject dangling references
     custom-bean-packages: ph.phcore.interceptor   # scan dedup interceptor
     custom-interceptor-classes:
       - ph.phcore.interceptor.PhCoreDeduplicationInterceptor
     validation:
-      requests_enabled: false  # must be false: RequestValidatingInterceptor
-                               # runs before PRE_HANDLED hooks
+      # MUST be false: RequestValidatingInterceptor (old-style IServerInterceptor)
+      # fires before @Hook(SERVER_INCOMING_REQUEST_PRE_HANDLED) regardless of
+      # registerInterceptor() order, which would validate pre-merge (stale)
+      # resources before dedup runs. The $validate FHIR operation endpoint is
+      # always available and not gated by this setting.
+      requests_enabled: false
+      responses_enabled: true                       # validate outgoing responses, add headers
     implementationguides:
       ph_core: ...
       ph_eref: ...

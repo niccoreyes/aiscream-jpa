@@ -23,8 +23,17 @@ hapi:
 
     enable_repository_validating_interceptor: true
 
+    enforce_referential_integrity_on_write: true
+
     validation:
+      # requests_enabled MUST remain false. The RequestValidatingInterceptor
+      # (old-style IServerInterceptor) fires at SERVER_INCOMING_REQUEST_POST_PROCESSED,
+      # which HAPI invokes BEFORE @Hook(SERVER_INCOMING_REQUEST_PRE_HANDLED) — the
+      # pointcut used by PhCoreDeduplicationInterceptor. Enabling this would validate
+      # the pre-merge (stale) incoming resource before dedup runs, breaking the flow.
+      # The $validate FHIR operation endpoint is always available and not gated here.
       requests_enabled: false
+      responses_enabled: true
 
     implementationguides:
       ph_core:

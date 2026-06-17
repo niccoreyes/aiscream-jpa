@@ -206,6 +206,15 @@ The `SERVER_INCOMING_REQUEST_PRE_HANDLED` hook is used (not
 `STORAGE_PRESTORAGE_RESOURCE_CREATED`) because storage-level resource
 modifications are not visible to the validator in HAPI 8.8.0.
 
+The `hapi.fhir.validation.requests_enabled` property MUST remain `false`. The
+`RequestValidatingInterceptor` is an old-style `IServerInterceptor` that fires
+at `SERVER_INCOMING_REQUEST_POST_PROCESSED`, which HAPI invokes **before**
+`@Hook(SERVER_INCOMING_REQUEST_PRE_HANDLED)` regardless of
+`registerInterceptor()` order. Enabling it would validate the pre-merge (stale)
+resource before the dedup interceptor runs, breaking the dedup flow.
+The `$validate` FHIR operation endpoint is always available and is not gated
+by `requests_enabled`.
+
 #### Scenario: Dedup interceptor runs before validation
 - **WHEN** a duplicate Patient is POSTed
 - **THEN** the deduplication interceptor merges the resource before the
@@ -363,3 +372,64 @@ output omits the field (as if never set).
   no birthDate, name=Incoming)
 - **THEN** the merged result has gender=female (incoming wins), name=Incoming
   (incoming wins), and birthDate=1990-06-15 (existing preserved)
+
+---
+
+### Requirement: Referential integrity enforcement on write
+
+The system SHALL reject any resource write (POST/PUT) that contains a reference
+to a non-existent resource. This is configured via:
+
+```yaml
+hapi.fhir.enforce_referential_integrity_on_write: true
+```
+
+When a write references a target that does not exist in the database, the
+system SHALL return an HTTP 422 error.
+
+#### Scenario: Write with valid reference is accepted
+- **WHEN** a resource is POSTed with a reference to an existing resource
+- **THEN** the system returns HTTP 201 Created and stores the resource
+
+#### Scenario: Write with dangling reference is rejected
+- **WHEN** a resource is POSTed with a reference to a non-existent resource
+- **THEN** the system returns HTTP 422 with an OperationOutcome describing the
+  unresolved reference
+- **AND** the resource is not stored
+
+---
+
+### Requirement: Response validation via ResponseValidatingInterceptor
+
+The system SHALL validate outgoing responses (reads, searches, history) using
+the `ResponseValidatingInterceptor`. This is configured via:
+
+```yaml
+hapi.fhir.validation.responses_enabled: true
+```
+
+The interceptor fires on the outgoing response path and attaches validation
+headers (`X-Validation-*`) to HTTP responses. This does not conflict with the
+dedup interceptor since it operates on responses rather than incoming requests.
+
+#### Scenario: Response validation headers present on read
+- **WHEN** a resource is read via GET
+- **THEN** the response includes `X-Validation-Pass` header if validation
+  succeeds
+- **OR** the response includes validation issue headers if validation fails
+
+---
+
+### Requirement: $validate operation endpoint always available
+
+The `$validate` FHIR operation endpoint SHALL be available for client
+pre-validation at `POST [resourceType]/$validate` and `POST /$validate`. This
+endpoint is built into the HAPI FHIR `RestfulServer` and is **not** gated by
+`hapi.fhir.validation.requests_enabled` — it is always accessible.
+
+#### Scenario: Client pre-validates a resource before submission
+- **WHEN** a client POSTs to `/$validate` with a resource in
+  `Parameters.parameter.resource`
+- **THEN** the server returns an `OperationOutcome` describing validation
+  issues (if any) without storing the resource
+- **AND** the resource is not persisted to the database

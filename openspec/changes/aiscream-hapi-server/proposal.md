@@ -14,16 +14,20 @@ image (`niccoreyes/aiscream-hapi:latest`) was built.
 
 ## What Changes
 
-### Configuration (stock image)
+### Configuration (custom Docker image)
 - Enable `RepositoryValidatingInterceptor` to validate all stored resources
   against known StructureDefinitions
-- Enable `RequestValidatingInterceptor` for HTTP-layer validation (later
-  disabled due to interceptor ordering constraints — see below)
+- Enable `ResponseValidatingInterceptor` to validate outgoing responses and
+  attach validation headers
+- Enable `enforce_referential_integrity_on_write` to reject writes that
+  reference non-existent resources
 - Preload PH Core (0.2.0) and PH eReferral (0.1.0) IGs as stored
   StructureDefinitions at startup
 - Configure remote terminology validation via `https://tx.fhirlab.net/fhir`
 - All resource writes (POST/PUT, Bundles, patches) are validated automatically
 - Resources without `meta.profile` are rejected with 422 HAPI-0575
+- The `$validate` FHIR operation endpoint is always available for client
+  pre-validation (not gated by `requests_enabled`)
 
 ### Fork customizations
 - **StarterJpaConfig.java**: Move `registerCustomInterceptors()` before
@@ -48,7 +52,16 @@ at `SERVER_INCOMING_REQUEST_POST_PROCESSED`, which is **before**
 old-style interceptors before `@Hook`-based interceptors regardless of
 `registerInterceptor()` order, so request-level validation must remain disabled
 to allow dedup to run first. The `RepositoryValidatingInterceptor` at the
-`STORAGE` level still validates all resources on insert/update.
+`STORAGE` level still validates all resources on insert/update. The
+`$validate` FHIR operation endpoint is not gated by `requests_enabled` and
+remains available for client pre-validation.
+
+### Response validation
+`hapi.fhir.validation.responses_enabled` is set to `true`. The
+`ResponseValidatingInterceptor` fires on outgoing responses (reads, searches,
+etc.) and attaches validation headers to the response. This does not conflict
+with the dedup interceptor since it operates on the response path, not the
+incoming request path.
 
 ### Validator initialization fix
 The `RepositoryValidatingInterceptor` bean now depends on `IPackageInstallerSvc`,
