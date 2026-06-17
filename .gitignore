@@ -174,3 +174,5 @@ hapi-fhir-jpaserver-starter/
 hapi.postgress.data
 
 hapi.postgress.data
+session-ses_12f2.md
+__pycache__/
