@@ -1,8 +1,8 @@
 # Bundle Transaction Test — PH eReferral HAPI FHIR
 
-**Date:** 2026-06-17T16:21:14.150629
+**Date:** 2026-06-17T17:39:31.221516
 **Server:** http://localhost:8080/fhir
-**Patient identifier:** `BT-PATIENT-20260617-162114`
+**Patient identifier:** `BT-PATIENT-20260617-173931`
 
 ---
 ## A. Validator Enforcement
@@ -20,7 +20,7 @@
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-      "value": "NOPROFILE-NEGATIVE-20260617-162114"
+      "value": "NOPROFILE-NEGATIVE-20260617-173931"
     }
   ],
   "name": [
@@ -66,7 +66,7 @@
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-      "value": "EMPTYPROFILE-NEGATIVE-20260617-162114"
+      "value": "EMPTYPROFILE-NEGATIVE-20260617-173931"
     }
   ],
   "name": [
@@ -109,13 +109,13 @@
   "type": "transaction",
   "entry": [
     {
-      "fullUrl": "urn:uuid:mixed-no-profile-20260617-162114",
+      "fullUrl": "urn:uuid:mixed-no-profile-20260617-173931",
       "resource": {
         "resourceType": "Patient",
         "identifier": [
           {
             "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-            "value": "NOPROFILE-NEGATIVE-20260617-162114"
+            "value": "NOPROFILE-NEGATIVE-20260617-173931"
           }
         ],
         "name": [
@@ -132,7 +132,7 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:mixed-obs-1-20260617-162114",
+      "fullUrl": "urn:uuid:mixed-obs-1-20260617-173931",
       "resource": {
         "resourceType": "Observation",
         "meta": {
@@ -163,7 +163,7 @@
           "text": "Blood pressure panel"
         },
         "subject": {
-          "reference": "urn:uuid:mixed-no-profile-20260617-162114"
+          "reference": "urn:uuid:mixed-no-profile-20260617-173931"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "component": [
@@ -205,7 +205,7 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:mixed-obs-2-20260617-162114",
+      "fullUrl": "urn:uuid:mixed-obs-2-20260617-173931",
       "resource": {
         "resourceType": "Observation",
         "meta": {
@@ -236,7 +236,7 @@
           "text": "Hemoglobin"
         },
         "subject": {
-          "reference": "urn:uuid:mixed-no-profile-20260617-162114"
+          "reference": "urn:uuid:mixed-no-profile-20260617-173931"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "valueQuantity": {
@@ -269,23 +269,23 @@
 ```
 
 - **[PASS]** Mixed-validity Bundle rejected HTTP 412
-### Rollback check /Patient?identifier=https://fhir.doh.gov.ph/identifier/philhealth-id|NOPROFILE-NEGATIVE-20260617-162114
+### Rollback check /Patient?identifier=https://fhir.doh.gov.ph/identifier/philhealth-id|NOPROFILE-NEGATIVE-20260617-173931
 
 **Response:**
 
 ```json
 {
   "resourceType": "Bundle",
-  "id": "10e52500-b6cc-4a60-a9b2-6032e0af7326",
+  "id": "7fbb529f-58be-4166-b787-ea61dc963276",
   "meta": {
-    "lastUpdated": "2026-06-17T08:21:14.307+00:00"
+    "lastUpdated": "2026-06-17T09:39:31.481+00:00"
   },
   "type": "searchset",
   "total": 0,
   "link": [
     {
       "relation": "self",
-      "url": "http://localhost:8080/fhir/Patient?identifier=https%3A%2F%2Ffhir.doh.gov.ph%2Fidentifier%2Fphilhealth-id%7CNOPROFILE-NEGATIVE-20260617-162114"
+      "url": "http://localhost:8080/fhir/Patient?identifier=https%3A%2F%2Ffhir.doh.gov.ph%2Fidentifier%2Fphilhealth-id%7CNOPROFILE-NEGATIVE-20260617-173931"
     }
   ]
 }
@@ -311,7 +311,7 @@
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-      "value": "INVALIDPROFILE-NEGATIVE-20260617-162114"
+      "value": "INVALIDPROFILE-NEGATIVE-20260617-173931"
     }
   ],
   "name": [
@@ -359,7 +359,7 @@
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/philsys",
-      "value": "CANONICAL-PHCORE-20260617-162114"
+      "value": "CANONICAL-PHCORE-20260617-173931"
     }
   ],
   "name": [
@@ -377,10 +377,10 @@
 ```json
 {
   "resourceType": "Patient",
-  "id": "9492",
+  "id": "9475",
   "meta": {
     "versionId": "1",
-    "lastUpdated": "2026-06-17T08:21:14.363+00:00",
+    "lastUpdated": "2026-06-17T09:39:31.610+00:00",
     "profile": [
       "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-patient"
     ]
@@ -388,7 +388,7 @@
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/philsys",
-      "value": "CANONICAL-PHCORE-20260617-162114"
+      "value": "CANONICAL-PHCORE-20260617-173931"
     }
   ],
   "name": [
@@ -401,7 +401,7 @@
 }
 ```
 
-- **[PASS]** PH Core canonical Patient accepted (HTTP 201) -> `9492`
+- **[PASS]** PH Core canonical Patient accepted (HTTP 201) -> `9475`
 ---
 ### A6. POST Patient with canonical `ereferral-patient` profile
 
@@ -421,11 +421,11 @@
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-      "value": "CANONICAL-EREF-20260617-162114"
+      "value": "CANONICAL-EREF-20260617-173931"
     },
     {
       "system": "https://fhir.doh.gov.ph/identifier/philsys",
-      "value": "6789-1234-20260617-162114"
+      "value": "6789-1234-20260617-173931"
     }
   ],
   "name": [
@@ -466,10 +466,10 @@
 ```json
 {
   "resourceType": "Patient",
-  "id": "9493",
+  "id": "9476",
   "meta": {
     "versionId": "1",
-    "lastUpdated": "2026-06-17T08:21:14.442+00:00",
+    "lastUpdated": "2026-06-17T09:39:31.700+00:00",
     "profile": [
       "https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-patient"
     ]
@@ -477,11 +477,11 @@
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-      "value": "CANONICAL-EREF-20260617-162114"
+      "value": "CANONICAL-EREF-20260617-173931"
     },
     {
       "system": "https://fhir.doh.gov.ph/identifier/philsys",
-      "value": "6789-1234-20260617-162114"
+      "value": "6789-1234-20260617-173931"
     }
   ],
   "name": [
@@ -517,7 +517,7 @@
 }
 ```
 
-- **[PASS]** eReferral canonical Patient accepted (HTTP 201) -> `9493`
+- **[PASS]** eReferral canonical Patient accepted (HTTP 201) -> `9476`
 ---
 ### A7. POST transaction Bundle — canonical Patient + canonical Observations
 
@@ -532,7 +532,7 @@
   "type": "transaction",
   "entry": [
     {
-      "fullUrl": "urn:uuid:canonical-patient-20260617-162114",
+      "fullUrl": "urn:uuid:canonical-patient-20260617-173931",
       "resource": {
         "resourceType": "Patient",
         "meta": {
@@ -543,7 +543,7 @@
         "identifier": [
           {
             "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-            "value": "CANONICAL-BUNDLE-20260617-162114"
+            "value": "CANONICAL-BUNDLE-20260617-173931"
           }
         ],
         "name": [
@@ -580,7 +580,7 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:canonical-obs-1-20260617-162114",
+      "fullUrl": "urn:uuid:canonical-obs-1-20260617-173931",
       "resource": {
         "resourceType": "Observation",
         "meta": {
@@ -611,7 +611,7 @@
           "text": "Blood pressure panel"
         },
         "subject": {
-          "reference": "urn:uuid:canonical-patient-20260617-162114"
+          "reference": "urn:uuid:canonical-patient-20260617-173931"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "component": [
@@ -653,7 +653,7 @@
       }
     },
     {
-      "fullUrl": "urn:uuid:canonical-obs-2-20260617-162114",
+      "fullUrl": "urn:uuid:canonical-obs-2-20260617-173931",
       "resource": {
         "resourceType": "Observation",
         "meta": {
@@ -684,7 +684,7 @@
           "text": "Hemoglobin"
         },
         "subject": {
-          "reference": "urn:uuid:canonical-patient-20260617-162114"
+          "reference": "urn:uuid:canonical-patient-20260617-173931"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "valueQuantity": {
@@ -706,7 +706,7 @@
 ```json
 {
   "resourceType": "Bundle",
-  "id": "b2075d66-2fc4-48a1-a9be-28f96072dc0f",
+  "id": "99bf60b0-bbe3-4ddb-b86a-1b4d13ee203a",
   "type": "transaction-response",
   "link": [
     {
@@ -718,9 +718,9 @@
     {
       "response": {
         "status": "201 Created",
-        "location": "Patient/9494/_history/1",
+        "location": "Patient/9477/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T08:21:14.495+00:00",
+        "lastModified": "2026-06-17T09:39:33.138+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -736,7 +736,7 @@
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Patient/9494/_history/1\". Took 24ms."
+              "diagnostics": "Successfully created resource \"Patient/9477/_history/1\". Took 41ms."
             }
           ]
         }
@@ -745,9 +745,9 @@
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/9495/_history/1",
+        "location": "Observation/9478/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T08:21:14.495+00:00",
+        "lastModified": "2026-06-17T09:39:33.138+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -763,7 +763,7 @@
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/9495/_history/1\". Took 48ms."
+              "diagnostics": "Successfully created resource \"Observation/9478/_history/1\". Took 3,454ms."
             }
           ]
         }
@@ -772,9 +772,9 @@
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/9496/_history/1",
+        "location": "Observation/9479/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T08:21:14.495+00:00",
+        "lastModified": "2026-06-17T09:39:33.138+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -790,7 +790,7 @@
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/9496/_history/1\". Took 17ms."
+              "diagnostics": "Successfully created resource \"Observation/9479/_history/1\". Took 739ms."
             }
           ]
         }
@@ -821,7 +821,7 @@ Create a fresh Patient via individual `POST /Patient` with PH eReferral profile.
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-      "value": "BT-PATIENT-20260617-162114"
+      "value": "BT-PATIENT-20260617-173931"
     }
   ],
   "name": [
@@ -842,10 +842,10 @@ Create a fresh Patient via individual `POST /Patient` with PH eReferral profile.
 ```json
 {
   "resourceType": "Patient",
-  "id": "9497",
+  "id": "9480",
   "meta": {
     "versionId": "1",
-    "lastUpdated": "2026-06-17T08:21:14.625+00:00",
+    "lastUpdated": "2026-06-17T09:39:37.457+00:00",
     "profile": [
       "https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-patient"
     ]
@@ -853,7 +853,7 @@ Create a fresh Patient via individual `POST /Patient` with PH eReferral profile.
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-      "value": "BT-PATIENT-20260617-162114"
+      "value": "BT-PATIENT-20260617-173931"
     }
   ],
   "name": [
@@ -869,12 +869,12 @@ Create a fresh Patient via individual `POST /Patient` with PH eReferral profile.
 }
 ```
 
-**Extracted Patient ID:** `9497`
-- **[PASS]** Patient created (HTTP 201) → `9497`
+**Extracted Patient ID:** `9480`
+- **[PASS]** Patient created (HTTP 201) → `9480`
 ---
 ## 2. POST Transaction Bundle (BP + Hemoglobin)
 
-POST a `Bundle` of type `transaction` with two Observations — Blood Pressure panel and Hemoglobin — referencing `9497`.
+POST a `Bundle` of type `transaction` with two Observations — Blood Pressure panel and Hemoglobin — referencing `9480`.
 ### POST / (Bundle) 
 
 **Request:**
@@ -916,7 +916,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
           "text": "Blood pressure panel"
         },
         "subject": {
-          "reference": "Patient/9497"
+          "reference": "Patient/9480"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "component": [
@@ -989,7 +989,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
           "text": "Hemoglobin"
         },
         "subject": {
-          "reference": "Patient/9497"
+          "reference": "Patient/9480"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "valueQuantity": {
@@ -1011,7 +1011,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
 ```json
 {
   "resourceType": "Bundle",
-  "id": "c039e416-7eac-4de6-8efb-1d313b123a31",
+  "id": "8b690f59-3585-4a6c-82d5-05db8e9dec2a",
   "type": "transaction-response",
   "link": [
     {
@@ -1023,9 +1023,9 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/9498/_history/1",
+        "location": "Observation/9481/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T08:21:14.657+00:00",
+        "lastModified": "2026-06-17T09:39:37.641+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -1041,7 +1041,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/9498/_history/1\". Took 28ms."
+              "diagnostics": "Successfully created resource \"Observation/9481/_history/1\". Took 65ms."
             }
           ]
         }
@@ -1050,9 +1050,9 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/9499/_history/1",
+        "location": "Observation/9482/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T08:21:14.657+00:00",
+        "lastModified": "2026-06-17T09:39:37.641+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -1068,7 +1068,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/9499/_history/1\". Took 38ms."
+              "diagnostics": "Successfully created resource \"Observation/9482/_history/1\". Took 17ms."
             }
           ]
         }
@@ -1081,34 +1081,34 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
 - **[PASS]** Bundle transaction accepted (HTTP 200) 
 ---
 ## 3. Search Observations for this Patient
-### GET /Observation?subject=Patient/9497
+### GET /Observation?subject=Patient/9480
 
 **Response:**
 
 ```json
 {
   "resourceType": "Bundle",
-  "id": "15e0fcca-7b59-4f95-9308-15843f173c13",
+  "id": "54869d8e-7c88-421b-8acf-8c6f7857a7ae",
   "meta": {
-    "lastUpdated": "2026-06-17T08:21:14.790+00:00"
+    "lastUpdated": "2026-06-17T09:39:37.803+00:00"
   },
   "type": "searchset",
   "total": 2,
   "link": [
     {
       "relation": "self",
-      "url": "http://localhost:8080/fhir/Observation?subject=Patient%2F9497"
+      "url": "http://localhost:8080/fhir/Observation?subject=Patient%2F9480"
     }
   ],
   "entry": [
     {
-      "fullUrl": "http://localhost:8080/fhir/Observation/9498",
+      "fullUrl": "http://localhost:8080/fhir/Observation/9481",
       "resource": {
         "resourceType": "Observation",
-        "id": "9498",
+        "id": "9481",
         "meta": {
           "versionId": "1",
-          "lastUpdated": "2026-06-17T08:21:14.657+00:00",
+          "lastUpdated": "2026-06-17T09:39:37.641+00:00",
           "profile": [
             "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-observation"
           ]
@@ -1136,7 +1136,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
           "text": "Blood pressure panel"
         },
         "subject": {
-          "reference": "Patient/9497"
+          "reference": "Patient/9480"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "component": [
@@ -1177,13 +1177,13 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
       }
     },
     {
-      "fullUrl": "http://localhost:8080/fhir/Observation/9499",
+      "fullUrl": "http://localhost:8080/fhir/Observation/9482",
       "resource": {
         "resourceType": "Observation",
-        "id": "9499",
+        "id": "9482",
         "meta": {
           "versionId": "1",
-          "lastUpdated": "2026-06-17T08:21:14.657+00:00",
+          "lastUpdated": "2026-06-17T09:39:37.641+00:00",
           "profile": [
             "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-observation"
           ]
@@ -1211,7 +1211,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
           "text": "Hemoglobin"
         },
         "subject": {
-          "reference": "Patient/9497"
+          "reference": "Patient/9480"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "valueQuantity": {
@@ -1233,7 +1233,7 @@ POST a `Bundle` of type `transaction` with two Observations — Blood Pressure p
 
 POST a `Bundle` of type `transaction` that contains:
 
-1. A Patient with the **same PhilHealth identifier** as the already-created Patient `9497` (name: InBundleDuplicate, gender: other)
+1. A Patient with the **same PhilHealth identifier** as the already-created Patient `9480` (name: InBundleDuplicate, gender: other)
 2. Blood Pressure observation (referencing the in-Bundle Patient via `urn:uuid:patient-bt-bundle`)
 3. Hemoglobin observation (same reference)
 
@@ -1259,7 +1259,7 @@ POST a `Bundle` of type `transaction` that contains:
         "identifier": [
           {
             "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-            "value": "BT-PATIENT-20260617-162114"
+            "value": "BT-PATIENT-20260617-173931"
           }
         ],
         "name": [
@@ -1405,7 +1405,7 @@ POST a `Bundle` of type `transaction` that contains:
 ```json
 {
   "resourceType": "Bundle",
-  "id": "c1de4e86-096b-4dfe-93e4-f551bd1e3527",
+  "id": "51bbdde8-4729-49b4-8fa6-345cfe18389b",
   "type": "transaction-response",
   "link": [
     {
@@ -1417,7 +1417,7 @@ POST a `Bundle` of type `transaction` that contains:
     {
       "response": {
         "status": "200 OK",
-        "location": "Patient/9497/_history/2",
+        "location": "Patient/9480/_history/2",
         "etag": "2",
         "outcome": {
           "resourceType": "OperationOutcome",
@@ -1434,7 +1434,7 @@ POST a `Bundle` of type `transaction` that contains:
                   }
                 ]
               },
-              "diagnostics": "Successfully updated resource \"Patient/9497/_history/2\"."
+              "diagnostics": "Successfully updated resource \"Patient/9480/_history/2\"."
             }
           ]
         }
@@ -1443,9 +1443,9 @@ POST a `Bundle` of type `transaction` that contains:
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/9500/_history/1",
+        "location": "Observation/9483/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T08:21:14.836+00:00",
+        "lastModified": "2026-06-17T09:39:37.870+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -1461,7 +1461,7 @@ POST a `Bundle` of type `transaction` that contains:
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/9500/_history/1\". Took 31ms."
+              "diagnostics": "Successfully created resource \"Observation/9483/_history/1\". Took 18ms."
             }
           ]
         }
@@ -1470,9 +1470,9 @@ POST a `Bundle` of type `transaction` that contains:
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/9501/_history/1",
+        "location": "Observation/9484/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T08:21:14.836+00:00",
+        "lastModified": "2026-06-17T09:39:37.870+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -1488,7 +1488,7 @@ POST a `Bundle` of type `transaction` that contains:
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/9501/_history/1\". Took 23ms."
+              "diagnostics": "Successfully created resource \"Observation/9484/_history/1\". Took 16ms."
             }
           ]
         }
@@ -1505,37 +1505,37 @@ POST a `Bundle` of type `transaction` that contains:
 ---
 ## 5. Search Patients by Identifier — Check Dedup Worked
 
-Search for all Patients with the PhilHealth identifier `BT-PATIENT-20260617-162114`. Transaction dedup should have converted the Patient entry from POST to PUT, so only **1 Patient** exists:
+Search for all Patients with the PhilHealth identifier `BT-PATIENT-20260617-173931`. Transaction dedup should have converted the Patient entry from POST to PUT, so only **1 Patient** exists:
 
-- `9497` (the original, updated with merged fields from step 4)
-### GET /Patient?identifier=https://fhir.doh.gov.ph/identifier/philhealth-id|BT-PATIENT-20260617-162114
+- `9480` (the original, updated with merged fields from step 4)
+### GET /Patient?identifier=https://fhir.doh.gov.ph/identifier/philhealth-id|BT-PATIENT-20260617-173931
 
 **Response:**
 
 ```json
 {
   "resourceType": "Bundle",
-  "id": "f9dab0e2-1215-449b-91f2-c0a99c6b9c2d",
+  "id": "982ce47f-2c6c-4c96-a063-c0ca49ce02e7",
   "meta": {
-    "lastUpdated": "2026-06-17T08:21:14.943+00:00"
+    "lastUpdated": "2026-06-17T09:39:38.373+00:00"
   },
   "type": "searchset",
   "total": 1,
   "link": [
     {
       "relation": "self",
-      "url": "http://localhost:8080/fhir/Patient?identifier=https%3A%2F%2Ffhir.doh.gov.ph%2Fidentifier%2Fphilhealth-id%7CBT-PATIENT-20260617-162114"
+      "url": "http://localhost:8080/fhir/Patient?identifier=https%3A%2F%2Ffhir.doh.gov.ph%2Fidentifier%2Fphilhealth-id%7CBT-PATIENT-20260617-173931"
     }
   ],
   "entry": [
     {
-      "fullUrl": "http://localhost:8080/fhir/Patient/9497",
+      "fullUrl": "http://localhost:8080/fhir/Patient/9480",
       "resource": {
         "resourceType": "Patient",
-        "id": "9497",
+        "id": "9480",
         "meta": {
           "versionId": "2",
-          "lastUpdated": "2026-06-17T08:21:14.836+00:00",
+          "lastUpdated": "2026-06-17T09:39:37.870+00:00",
           "profile": [
             "https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-patient"
           ]
@@ -1543,7 +1543,7 @@ Search for all Patients with the PhilHealth identifier `BT-PATIENT-20260617-1621
         "identifier": [
           {
             "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-            "value": "BT-PATIENT-20260617-162114"
+            "value": "BT-PATIENT-20260617-173931"
           }
         ],
         "name": [
@@ -1565,10 +1565,10 @@ Search for all Patients with the PhilHealth identifier `BT-PATIENT-20260617-1621
 }
 ```
 
-- **[PASS]** Only 1 Patient exists (transaction dedup worked) total=1, ids=['9497']
+- **[PASS]** Only 1 Patient exists (transaction dedup worked) total=1, ids=['9480']
 
 **Updated Patient attributes after transaction dedup:**
-- **id:** `9497`
+- **id:** `9480`
 - **gender:** `other` (expected: other — incoming from Bundle wins)
 - **name:** `BundleTest InBundleDuplicate` (expected: BundleTest InBundleDuplicate — incoming wins)
 - **birthDate:** `1985-05-20` (expected: 1985-05-20 — preserved from original)
@@ -1591,7 +1591,7 @@ POST a Patient with the **same PhilHealth identifier** via individual `POST /Pat
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-      "value": "BT-PATIENT-20260617-162114"
+      "value": "BT-PATIENT-20260617-173931"
     }
   ],
   "name": [
@@ -1618,10 +1618,10 @@ POST a Patient with the **same PhilHealth identifier** via individual `POST /Pat
     {
       "resource": {
         "resourceType": "Patient",
-        "id": "9497",
+        "id": "9480",
         "meta": {
           "versionId": "3",
-          "lastUpdated": "2026-06-17T08:21:14.965+00:00",
+          "lastUpdated": "2026-06-17T09:39:38.732+00:00",
           "profile": [
             "https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-patient"
           ]
@@ -1629,7 +1629,7 @@ POST a Patient with the **same PhilHealth identifier** via individual `POST /Pat
         "identifier": [
           {
             "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-            "value": "BT-PATIENT-20260617-162114"
+            "value": "BT-PATIENT-20260617-173931"
           }
         ],
         "name": [
@@ -1654,7 +1654,7 @@ POST a Patient with the **same PhilHealth identifier** via individual `POST /Pat
           {
             "severity": "information",
             "code": "informational",
-            "diagnostics": "Merged incoming Patient into existing resource Patient/9497"
+            "diagnostics": "Merged incoming Patient into existing resource Patient/9480"
           }
         ]
       },
@@ -1671,39 +1671,39 @@ POST a Patient with the **same PhilHealth identifier** via individual `POST /Pat
 - **[PASS]** Contains merged Patient resource 
 - **[PASS]** Contains informational OperationOutcome 
 - **[PASS]** OperationOutcome severity is 'information' severity=information
-- Merged into Patient ID: `9497`
+- Merged into Patient ID: `9480`
 ---
 ## 7. Final Verification — Search Patient by Identifier
 
 After the individual dedup POST (step 6), the duplicate was merged into the existing Patient. Since transaction dedup also worked (step 4-5), there was never a duplicate to begin with. Expect **1 Patient**.
-### GET /Patient?identifier=https://fhir.doh.gov.ph/identifier/philhealth-id|BT-PATIENT-20260617-162114
+### GET /Patient?identifier=https://fhir.doh.gov.ph/identifier/philhealth-id|BT-PATIENT-20260617-173931
 
 **Response:**
 
 ```json
 {
   "resourceType": "Bundle",
-  "id": "f9dab0e2-1215-449b-91f2-c0a99c6b9c2d",
+  "id": "982ce47f-2c6c-4c96-a063-c0ca49ce02e7",
   "meta": {
-    "lastUpdated": "2026-06-17T08:21:14.943+00:00"
+    "lastUpdated": "2026-06-17T09:39:38.373+00:00"
   },
   "type": "searchset",
   "total": 1,
   "link": [
     {
       "relation": "self",
-      "url": "http://localhost:8080/fhir/Patient?identifier=https%3A%2F%2Ffhir.doh.gov.ph%2Fidentifier%2Fphilhealth-id%7CBT-PATIENT-20260617-162114"
+      "url": "http://localhost:8080/fhir/Patient?identifier=https%3A%2F%2Ffhir.doh.gov.ph%2Fidentifier%2Fphilhealth-id%7CBT-PATIENT-20260617-173931"
     }
   ],
   "entry": [
     {
-      "fullUrl": "http://localhost:8080/fhir/Patient/9497",
+      "fullUrl": "http://localhost:8080/fhir/Patient/9480",
       "resource": {
         "resourceType": "Patient",
-        "id": "9497",
+        "id": "9480",
         "meta": {
           "versionId": "3",
-          "lastUpdated": "2026-06-17T08:21:14.965+00:00",
+          "lastUpdated": "2026-06-17T09:39:38.732+00:00",
           "profile": [
             "https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-patient"
           ]
@@ -1711,7 +1711,7 @@ After the individual dedup POST (step 6), the duplicate was merged into the exis
         "identifier": [
           {
             "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-            "value": "BT-PATIENT-20260617-162114"
+            "value": "BT-PATIENT-20260617-173931"
           }
         ],
         "name": [
@@ -1733,7 +1733,7 @@ After the individual dedup POST (step 6), the duplicate was merged into the exis
 }
 ```
 
-- **[PASS]** Exactly 1 Patient exists (dedup worked at both individual and transaction level) total=1, ids=['9497']
+- **[PASS]** Exactly 1 Patient exists (dedup worked at both individual and transaction level) total=1, ids=['9480']
 
 ---
 ## B. Practitioner & Organization Dedup
@@ -1756,7 +1756,7 @@ Create a Practitioner with a PRC license, then POST again with the same identifi
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/prc-license",
-      "value": "BT-PRACT-20260617-162114"
+      "value": "BT-PRACT-20260617-173931"
     }
   ],
   "name": [
@@ -1776,10 +1776,10 @@ Create a Practitioner with a PRC license, then POST again with the same identifi
 ```json
 {
   "resourceType": "Practitioner",
-  "id": "9502",
+  "id": "9485",
   "meta": {
     "versionId": "1",
-    "lastUpdated": "2026-06-17T08:21:14.998+00:00",
+    "lastUpdated": "2026-06-17T09:39:38.811+00:00",
     "profile": [
       "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-practitioner"
     ]
@@ -1787,7 +1787,7 @@ Create a Practitioner with a PRC license, then POST again with the same identifi
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/prc-license",
-      "value": "BT-PRACT-20260617-162114"
+      "value": "BT-PRACT-20260617-173931"
     }
   ],
   "name": [
@@ -1802,7 +1802,7 @@ Create a Practitioner with a PRC license, then POST again with the same identifi
 }
 ```
 
-- **[PASS]** Practitioner created (HTTP 201) -> `9502`
+- **[PASS]** Practitioner created (HTTP 201) -> `9485`
 ### POST /Practitioner (dedup) /Practitioner
 
 **Request:**
@@ -1818,7 +1818,7 @@ Create a Practitioner with a PRC license, then POST again with the same identifi
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/prc-license",
-      "value": "BT-PRACT-20260617-162114"
+      "value": "BT-PRACT-20260617-173931"
     }
   ],
   "name": [
@@ -1844,10 +1844,10 @@ Create a Practitioner with a PRC license, then POST again with the same identifi
     {
       "resource": {
         "resourceType": "Practitioner",
-        "id": "9502",
+        "id": "9485",
         "meta": {
           "versionId": "2",
-          "lastUpdated": "2026-06-17T08:21:15.036+00:00",
+          "lastUpdated": "2026-06-17T09:39:39.932+00:00",
           "profile": [
             "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-practitioner"
           ]
@@ -1855,7 +1855,7 @@ Create a Practitioner with a PRC license, then POST again with the same identifi
         "identifier": [
           {
             "system": "https://fhir.doh.gov.ph/identifier/prc-license",
-            "value": "BT-PRACT-20260617-162114"
+            "value": "BT-PRACT-20260617-173931"
           }
         ],
         "name": [
@@ -1879,7 +1879,7 @@ Create a Practitioner with a PRC license, then POST again with the same identifi
           {
             "severity": "information",
             "code": "informational",
-            "diagnostics": "Merged incoming Practitioner into existing resource Practitioner/9502"
+            "diagnostics": "Merged incoming Practitioner into existing resource Practitioner/9485"
           }
         ]
       },
@@ -1913,7 +1913,7 @@ Create an Organization with a DOH facility code, then POST again with the same i
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/nhfr-code",
-      "value": "BT-ORG-20260617-162114"
+      "value": "BT-ORG-20260617-173931"
     }
   ],
   "name": "BundleTest Organization",
@@ -1926,10 +1926,10 @@ Create an Organization with a DOH facility code, then POST again with the same i
 ```json
 {
   "resourceType": "Organization",
-  "id": "9503",
+  "id": "9486",
   "meta": {
     "versionId": "1",
-    "lastUpdated": "2026-06-17T08:21:15.057+00:00",
+    "lastUpdated": "2026-06-17T09:39:39.972+00:00",
     "profile": [
       "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-organization"
     ]
@@ -1937,7 +1937,7 @@ Create an Organization with a DOH facility code, then POST again with the same i
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/nhfr-code",
-      "value": "BT-ORG-20260617-162114"
+      "value": "BT-ORG-20260617-173931"
     }
   ],
   "active": true,
@@ -1945,7 +1945,7 @@ Create an Organization with a DOH facility code, then POST again with the same i
 }
 ```
 
-- **[PASS]** Organization created (HTTP 201) -> `9503`
+- **[PASS]** Organization created (HTTP 201) -> `9486`
 ### POST /Organization (dedup) /Organization
 
 **Request:**
@@ -1961,7 +1961,7 @@ Create an Organization with a DOH facility code, then POST again with the same i
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/nhfr-code",
-      "value": "BT-ORG-20260617-162114"
+      "value": "BT-ORG-20260617-173931"
     }
   ],
   "name": "DedupOrg Merged",
@@ -1980,10 +1980,10 @@ Create an Organization with a DOH facility code, then POST again with the same i
     {
       "resource": {
         "resourceType": "Organization",
-        "id": "9503",
+        "id": "9486",
         "meta": {
           "versionId": "2",
-          "lastUpdated": "2026-06-17T08:21:15.089+00:00",
+          "lastUpdated": "2026-06-17T09:39:40.444+00:00",
           "profile": [
             "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-organization"
           ]
@@ -1991,7 +1991,7 @@ Create an Organization with a DOH facility code, then POST again with the same i
         "identifier": [
           {
             "system": "https://fhir.doh.gov.ph/identifier/nhfr-code",
-            "value": "BT-ORG-20260617-162114"
+            "value": "BT-ORG-20260617-173931"
           }
         ],
         "active": true,
@@ -2008,7 +2008,7 @@ Create an Organization with a DOH facility code, then POST again with the same i
           {
             "severity": "information",
             "code": "informational",
-            "diagnostics": "Merged incoming Organization into existing resource Organization/9503"
+            "diagnostics": "Merged incoming Organization into existing resource Organization/9486"
           }
         ]
       },
@@ -2039,7 +2039,7 @@ POST a Bundle with a Patient (fresh identifier) + 2 Observations. No dedup shoul
   "type": "transaction",
   "entry": [
     {
-      "fullUrl": "urn:uuid:nomatch-patient-20260617-162114",
+      "fullUrl": "urn:uuid:nomatch-patient-20260617-173931",
       "resource": {
         "resourceType": "Patient",
         "meta": {
@@ -2050,7 +2050,7 @@ POST a Bundle with a Patient (fresh identifier) + 2 Observations. No dedup shoul
         "identifier": [
           {
             "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-            "value": "NOMATCH-20260617-162114"
+            "value": "NOMATCH-20260617-173931"
           }
         ],
         "name": [
@@ -2067,7 +2067,7 @@ POST a Bundle with a Patient (fresh identifier) + 2 Observations. No dedup shoul
       }
     },
     {
-      "fullUrl": "urn:uuid:nomatch-obs-1-20260617-162114",
+      "fullUrl": "urn:uuid:nomatch-obs-1-20260617-173931",
       "resource": {
         "resourceType": "Observation",
         "meta": {
@@ -2098,7 +2098,7 @@ POST a Bundle with a Patient (fresh identifier) + 2 Observations. No dedup shoul
           "text": "Blood pressure panel"
         },
         "subject": {
-          "reference": "urn:uuid:nomatch-patient-20260617-162114"
+          "reference": "urn:uuid:nomatch-patient-20260617-173931"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "component": [
@@ -2140,7 +2140,7 @@ POST a Bundle with a Patient (fresh identifier) + 2 Observations. No dedup shoul
       }
     },
     {
-      "fullUrl": "urn:uuid:nomatch-obs-2-20260617-162114",
+      "fullUrl": "urn:uuid:nomatch-obs-2-20260617-173931",
       "resource": {
         "resourceType": "Observation",
         "meta": {
@@ -2171,7 +2171,7 @@ POST a Bundle with a Patient (fresh identifier) + 2 Observations. No dedup shoul
           "text": "Hemoglobin"
         },
         "subject": {
-          "reference": "urn:uuid:nomatch-patient-20260617-162114"
+          "reference": "urn:uuid:nomatch-patient-20260617-173931"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "valueQuantity": {
@@ -2193,7 +2193,7 @@ POST a Bundle with a Patient (fresh identifier) + 2 Observations. No dedup shoul
 ```json
 {
   "resourceType": "Bundle",
-  "id": "46398839-3a90-4764-9116-e9d215c65f40",
+  "id": "5a9f0355-73b2-43f2-ab25-d368fec64f79",
   "type": "transaction-response",
   "link": [
     {
@@ -2205,9 +2205,9 @@ POST a Bundle with a Patient (fresh identifier) + 2 Observations. No dedup shoul
     {
       "response": {
         "status": "201 Created",
-        "location": "Patient/9504/_history/1",
+        "location": "Patient/9487/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T08:21:15.108+00:00",
+        "lastModified": "2026-06-17T09:39:40.469+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -2223,7 +2223,7 @@ POST a Bundle with a Patient (fresh identifier) + 2 Observations. No dedup shoul
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Patient/9504/_history/1\". Took 16ms."
+              "diagnostics": "Successfully created resource \"Patient/9487/_history/1\". Took 32ms."
             }
           ]
         }
@@ -2232,9 +2232,9 @@ POST a Bundle with a Patient (fresh identifier) + 2 Observations. No dedup shoul
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/9505/_history/1",
+        "location": "Observation/9488/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T08:21:15.108+00:00",
+        "lastModified": "2026-06-17T09:39:40.469+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -2250,7 +2250,7 @@ POST a Bundle with a Patient (fresh identifier) + 2 Observations. No dedup shoul
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/9505/_history/1\". Took 27ms."
+              "diagnostics": "Successfully created resource \"Observation/9488/_history/1\". Took 26ms."
             }
           ]
         }
@@ -2259,9 +2259,9 @@ POST a Bundle with a Patient (fresh identifier) + 2 Observations. No dedup shoul
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/9506/_history/1",
+        "location": "Observation/9489/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T08:21:15.108+00:00",
+        "lastModified": "2026-06-17T09:39:40.469+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -2277,7 +2277,7 @@ POST a Bundle with a Patient (fresh identifier) + 2 Observations. No dedup shoul
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/9506/_history/1\". Took 72ms."
+              "diagnostics": "Successfully created resource \"Observation/9489/_history/1\". Took 26ms."
             }
           ]
         }
@@ -2303,7 +2303,7 @@ POST a Bundle with a new Patient (with eReferral profile) + 2 Observations (with
   "type": "transaction",
   "entry": [
     {
-      "fullUrl": "urn:uuid:allvalid-patient-20260617-162114",
+      "fullUrl": "urn:uuid:allvalid-patient-20260617-173931",
       "resource": {
         "resourceType": "Patient",
         "meta": {
@@ -2314,7 +2314,7 @@ POST a Bundle with a new Patient (with eReferral profile) + 2 Observations (with
         "identifier": [
           {
             "system": "https://fhir.doh.gov.ph/identifier/philhealth-id",
-            "value": "ALLVALID-20260617-162114"
+            "value": "ALLVALID-20260617-173931"
           }
         ],
         "name": [
@@ -2331,7 +2331,7 @@ POST a Bundle with a new Patient (with eReferral profile) + 2 Observations (with
       }
     },
     {
-      "fullUrl": "urn:uuid:allvalid-obs-1-20260617-162114",
+      "fullUrl": "urn:uuid:allvalid-obs-1-20260617-173931",
       "resource": {
         "resourceType": "Observation",
         "meta": {
@@ -2362,7 +2362,7 @@ POST a Bundle with a new Patient (with eReferral profile) + 2 Observations (with
           "text": "Blood pressure panel"
         },
         "subject": {
-          "reference": "urn:uuid:allvalid-patient-20260617-162114"
+          "reference": "urn:uuid:allvalid-patient-20260617-173931"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "component": [
@@ -2404,7 +2404,7 @@ POST a Bundle with a new Patient (with eReferral profile) + 2 Observations (with
       }
     },
     {
-      "fullUrl": "urn:uuid:allvalid-obs-2-20260617-162114",
+      "fullUrl": "urn:uuid:allvalid-obs-2-20260617-173931",
       "resource": {
         "resourceType": "Observation",
         "meta": {
@@ -2435,7 +2435,7 @@ POST a Bundle with a new Patient (with eReferral profile) + 2 Observations (with
           "text": "Hemoglobin"
         },
         "subject": {
-          "reference": "urn:uuid:allvalid-patient-20260617-162114"
+          "reference": "urn:uuid:allvalid-patient-20260617-173931"
         },
         "effectiveDateTime": "2026-06-17T10:00:00+08:00",
         "valueQuantity": {
@@ -2457,7 +2457,7 @@ POST a Bundle with a new Patient (with eReferral profile) + 2 Observations (with
 ```json
 {
   "resourceType": "Bundle",
-  "id": "70efa80d-2474-41ba-b698-d4143c9b403b",
+  "id": "b666abe4-6b9c-4644-b88e-de58ef0f9b86",
   "type": "transaction-response",
   "link": [
     {
@@ -2469,9 +2469,9 @@ POST a Bundle with a new Patient (with eReferral profile) + 2 Observations (with
     {
       "response": {
         "status": "201 Created",
-        "location": "Patient/9507/_history/1",
+        "location": "Patient/9490/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T08:21:15.273+00:00",
+        "lastModified": "2026-06-17T09:39:40.628+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -2487,7 +2487,7 @@ POST a Bundle with a new Patient (with eReferral profile) + 2 Observations (with
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Patient/9507/_history/1\". Took 31ms."
+              "diagnostics": "Successfully created resource \"Patient/9490/_history/1\". Took 20ms."
             }
           ]
         }
@@ -2496,9 +2496,9 @@ POST a Bundle with a new Patient (with eReferral profile) + 2 Observations (with
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/9508/_history/1",
+        "location": "Observation/9491/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T08:21:15.273+00:00",
+        "lastModified": "2026-06-17T09:39:40.628+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -2514,7 +2514,7 @@ POST a Bundle with a new Patient (with eReferral profile) + 2 Observations (with
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/9508/_history/1\". Took 30ms."
+              "diagnostics": "Successfully created resource \"Observation/9491/_history/1\". Took 30ms."
             }
           ]
         }
@@ -2523,9 +2523,9 @@ POST a Bundle with a new Patient (with eReferral profile) + 2 Observations (with
     {
       "response": {
         "status": "201 Created",
-        "location": "Observation/9509/_history/1",
+        "location": "Observation/9492/_history/1",
         "etag": "1",
-        "lastModified": "2026-06-17T08:21:15.273+00:00",
+        "lastModified": "2026-06-17T09:39:40.628+00:00",
         "outcome": {
           "resourceType": "OperationOutcome",
           "issue": [
@@ -2541,7 +2541,7 @@ POST a Bundle with a new Patient (with eReferral profile) + 2 Observations (with
                   }
                 ]
               },
-              "diagnostics": "Successfully created resource \"Observation/9509/_history/1\". Took 43ms."
+              "diagnostics": "Successfully created resource \"Observation/9492/_history/1\". Took 25ms."
             }
           ]
         }
@@ -2559,13 +2559,13 @@ The final merged Patient should reflect the merge strategy: incoming wins where 
 - **[PASS]** Merge: gender=female (incoming from step 6 wins) gender=female
 - **[PASS]** Merge: birthDate=1985-05-20 (preserved from original) birthDate=1985-05-20
 - **[PASS]** Merge: name=DedupSent (incoming from step 6 wins) given=DedupSent
-- **[PASS]** Merge: identifier union includes both PhilHealth and PhilSys identifier_count=1, ids=['BT-PATIENT-20260617-162114']
+- **[PASS]** Merge: identifier union includes both PhilHealth and PhilSys identifier_count=1, ids=['BT-PATIENT-20260617-173931']
 ---
 ## D. Transaction Dedup Response Format Detail
 
 In step 4 above, the dedup interceptor converted the Patient entry from POST to PUT. The transaction response should show `200 OK` for the updated Patient and `201 Created` for new Observations.
-- **[PASS]** Transaction response includes '200 OK' for updated Patient statuses=[('200 OK', 'Patient/9497/_history/2'), ('201 Created', 'Observation/9500/_history/1'), ('201 Created', 'Observation/9501/_history/1')]
-- **[PASS]** Transaction response includes '201 Created' for new Observations statuses=[('200 OK', 'Patient/9497/_history/2'), ('201 Created', 'Observation/9500/_history/1'), ('201 Created', 'Observation/9501/_history/1')]
+- **[PASS]** Transaction response includes '200 OK' for updated Patient statuses=[('200 OK', 'Patient/9480/_history/2'), ('201 Created', 'Observation/9483/_history/1'), ('201 Created', 'Observation/9484/_history/1')]
+- **[PASS]** Transaction response includes '201 Created' for new Observations statuses=[('200 OK', 'Patient/9480/_history/2'), ('201 Created', 'Observation/9483/_history/1'), ('201 Created', 'Observation/9484/_history/1')]
 ---
 ## E. No-Match Individual POST
 
@@ -2585,7 +2585,7 @@ POST a Practitioner with a unique identifier never seen before — the dedup int
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/prc-license",
-      "value": "UNIQUE-NOMATCH-20260617-162114"
+      "value": "UNIQUE-NOMATCH-20260617-173931"
     }
   ],
   "name": [
@@ -2602,10 +2602,10 @@ POST a Practitioner with a unique identifier never seen before — the dedup int
 ```json
 {
   "resourceType": "Practitioner",
-  "id": "9510",
+  "id": "9493",
   "meta": {
     "versionId": "1",
-    "lastUpdated": "2026-06-17T08:21:15.417+00:00",
+    "lastUpdated": "2026-06-17T09:39:40.779+00:00",
     "profile": [
       "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-practitioner"
     ]
@@ -2613,7 +2613,7 @@ POST a Practitioner with a unique identifier never seen before — the dedup int
   "identifier": [
     {
       "system": "https://fhir.doh.gov.ph/identifier/prc-license",
-      "value": "UNIQUE-NOMATCH-20260617-162114"
+      "value": "UNIQUE-NOMATCH-20260617-173931"
     }
   ],
   "name": [
@@ -2666,4 +2666,4 @@ POST a Practitioner with a unique identifier never seen before — the dedup int
 
 **Edge cases (C-E):** No-match transactions proceed normally; all-valid transactions succeed; merged fields follow the incoming-wins strategy with identifier union; transaction responses show correct status codes (200 OK for PUT-updated entries, 201 Created for new).
 
-Generated by `tests/run-bundle-test.py` on 2026-06-17T16:21:15.464284
+Generated by `tests/run-bundle-test.py` on 2026-06-17T17:39:40.841535
