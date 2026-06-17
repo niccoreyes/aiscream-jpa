@@ -19,7 +19,7 @@ hapi:
     enable_repository_validating_interceptor: true
 
     validation:
-      requests_enabled: true
+      requests_enabled: false
 
     implementationguides:
       ph_core:
