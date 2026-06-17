@@ -1,0 +1,22 @@
+{
+  "resourceType": "StructureDefinition",
+  "url": "http://hl7.org/fhir/StructureDefinition/individual-genderIdentity",
+  "version": "5.3.0",
+  "name": "PGenderIdentity",
+  "title": "Individual Gender Identity",
+  "status": "active",
+  "kind": "complex-type",
+  "abstract": false,
+  "type": "Extension",
+  "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Extension",
+  "derivation": "constraint",
+  "fhirVersion": "4.0.1",
+  "differential": {
+    "element": [{
+      "id": "Extension",
+      "path": "Extension",
+      "min": 0,
+      "max": "*"
+    }]
+  }
+}
