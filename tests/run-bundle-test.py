@@ -21,10 +21,11 @@ import time
 from datetime import datetime
 from textwrap import dedent
 
-BASE_URL = "http://localhost:8080/fhir"
+BASE_URL = "https://fhirportal.telehealth.ph/eref/fhir/"
 TS = datetime.now().strftime("%Y%m%d-%H%M%S")
 REPORT_FILE = f"tests/bundle-transaction-test-{TS}.md"
 OUTPUT = []
+RESULTS = {}
 
 PATIENT_ID = "BT-PATIENT-" + TS
 PRACT_ID = "BT-PRACT-" + TS
@@ -132,7 +133,8 @@ def check_persist(label, resource_id, resource_type="Patient"):
 
 def search_idents(resource_type, system, value, label, retries=3):
     """Search by identifier with retries for indexing delay."""
-    path = f"/{resource_type}?identifier={system}|{value}"
+    from urllib.parse import quote
+    path = f"/{resource_type}?identifier={quote(system)}|{quote(value)}"
     for attempt in range(retries):
         time.sleep(1.0)
         cmd = ["curl", "-s", "-X", "GET", f"{BASE_URL}{path}",
@@ -140,13 +142,16 @@ def search_idents(resource_type, system, value, label, retries=3):
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         try:
             resp = json.loads(result.stdout)
-            total = resp.get("total", len(resp.get("entry", [])))
-            if total > 0:
-                fh("### {label} {path} (retry {n})", label=label, path=path, n=attempt+1)
-                fh("")
-                fh("**Response:** total={total}", total=total)
-                fh("")
-                return resp, total
+            if resp.get("resourceType") == "Bundle":
+                total = resp.get("total", len(resp.get("entry", [])))
+                if total > 0:
+                    fh("### {label} {path} (retry {n})", label=label, path=path, n=attempt+1)
+                    fh("")
+                    fh("**Response:** total={total}", total=total)
+                    fh("")
+                    return resp, total
+            else:
+                pass  # not a Bundle, try again
         except json.JSONDecodeError:
             pass
     resp = fhir_get(path, label)
@@ -325,6 +330,7 @@ def build_patient_plus_obs_bundle():
 def verify(label, condition, detail=""):
     mark = "PASS" if condition else "FAIL"
     fh("- **[{mark}]** {label} {detail}", mark=mark, label=label, detail=detail)
+    RESULTS[label] = condition
     return condition
 
 
@@ -952,35 +958,68 @@ def main():
     # ── Summary ─────────────────────────────────────────────────────────────
     fh("## Summary")
     fh("")
+
+    def result_for(*keys):
+        for k in keys:
+            if k in RESULTS:
+                return "**PASS**" if RESULTS[k] else "**FAIL**"
+        return "_untested_"
+
+    pass_count = sum(1 for v in RESULTS.values() if v)
+    fail_count = sum(1 for v in RESULTS.values() if not v)
+    fh("**Totals:** {p} PASS, {f} FAIL, {t} checks",
+       p=pass_count, f=fail_count, t=len(RESULTS))
+    fh("")
     fh("| # | Test | Expected | Result |")
     fh("|---|------|----------|--------|")
-    fh("| A1 | No-profile Patient POST | 422 Rejected | Pass |")
-    fh("| A2 | Empty meta.profile Patient POST | 422 Rejected | Pass |")
-    fh("| A3 | Mixed-validity Bundle POST | 422 Rejected + atomic rollback | Pass |")
-    fh("| A4 | Invalid-profile Patient POST | 422 Rejected | Pass |")
-    fh("| A5 | PH Core canonical Patient POST | 201 Created | Pass |")
-    fh("| A6 | eReferral canonical Patient POST | 201 Created | Pass |")
-    fh("| A7 | Canonical-valid Bundle POST | 200 OK, all 3 created | Pass |")
-    fh("| 1 | Individual Patient create | 201 Created | Pass |")
-    fh("| 2 | Bundle POST (Observations only) | 200 OK, 2 Obs created | Pass |")
-    fh("| 3 | Observation search | 2 found | Pass |")
+    fh("| A1 | No-profile Patient POST | 422 Rejected | {r} |",
+       r=result_for("Patient without meta.profile rejected"))
+    fh("| A2 | Empty meta.profile Patient POST | 422 Rejected | {r} |",
+       r=result_for("Patient with empty meta.profile rejected"))
+    fh("| A3 | Mixed-validity Bundle POST | 422 Rejected + atomic rollback | {r} |",
+       r=result_for("Mixed-validity Bundle rejected", "Atomic rollback — no no-profile Patient stored"))
+    fh("| A4 | Invalid-profile Patient POST | 422 Rejected | {r} |",
+       r=result_for("Patient with invalid profile rejected"))
+    fh("| A5 | PH Core canonical Patient POST | 201 Created | {r} |",
+       r=result_for("PH Core canonical Patient accepted (HTTP 201)"))
+    fh("| A6 | eReferral canonical Patient POST | 201 Created | {r} |",
+       r=result_for("eReferral canonical Patient accepted (HTTP 201)"))
+    fh("| A7 | Canonical-valid Bundle POST | 200 OK, all 3 created | {r} |",
+       r=result_for("Canonical Bundle accepted (HTTP 200)", "All 3 canonical entries created normally"))
+    fh("| 1 | Individual Patient create | 201 Created | {r} |",
+       r=result_for("Patient created (HTTP 201)"))
+    fh("| 2 | Bundle POST (Observations only) | 200 OK, 2 Obs created | {r} |",
+       r=result_for("Bundle transaction accepted (HTTP 200)"))
+    fh("| 3 | Observation search | 2 found | {r} |",
+       r=result_for("Exactly 2 Observations found"))
     fh("| 4 | Bundle POST (Patient + Observations) — Patient already exists "
-       "| Transaction dedup converts POST->PUT, no duplicate created | Pass |")
-    fh("| 5 | Post-Bundle Patient count | 1 Patient (original, updated "
-       "by PUT) | Pass |")
+       "| Transaction dedup converts POST->PUT, no duplicate | {r} |",
+       r=result_for("Bundle accepted (HTTP 200)"))
+    fh("| 5 | Post-Bundle Patient count | 1 Patient (original, updated by PUT) "
+       "| {r} |",
+       r=result_for("Only 1 Patient exists (transaction dedup worked)"))
     fh("| 6 | Individual duplicate Patient POST | 200 OK, Bundle with merged "
-       "resource + info OO | Pass |")
+       "resource + info OO | {r} |",
+       r=result_for("Response is a Bundle (not error OperationOutcome)"))
     fh("| 7 | Final Patient count | 1 Patient (no duplicates at any level) "
-       "| Pass |")
-    fh("| B1 | Practitioner double POST (dedup) | 200 OK, dedup Bundle | Pass |")
-    fh("| B2 | Organization double POST (dedup) | 200 OK, dedup Bundle | Pass |")
-    fh("| C1 | No-match transaction Bundle | 200 OK, all 3 created | Pass |")
-    fh("| C2 | All-valid transaction Bundle | 200 OK, all 3 created | Pass |")
+       "| {r} |",
+       r=result_for("Exactly 1 Patient exists (dedup worked at both individual and transaction level)"))
+    fh("| B1 | Practitioner double POST (dedup) | 200 OK, dedup Bundle | {r} |",
+       r=result_for("Practitioner dedup returns Bundle"))
+    fh("| B2 | Organization double POST (dedup) | 200 OK, dedup Bundle | {r} |",
+       r=result_for("Organization dedup returns Bundle"))
+    fh("| C1 | No-match transaction Bundle | 200 OK, all 3 created | {r} |",
+       r=result_for("No-match Bundle accepted (HTTP 200)", "All 3 entries created normally"))
+    fh("| C2 | All-valid transaction Bundle | 200 OK, all 3 created | {r} |",
+       r=result_for("All-valid Bundle accepted (HTTP 200)"))
     fh("| C3 | Merge strategy field assertions | Gender/name incoming wins, "
-       "birthDate preserved, identifiers unioned | Pass |")
-    fh("| D | Transaction response format detail | 200 OK for updated Patient, "
-       "201 Created for Observations | Pass |")
-    fh("| E | No-match individual POST | 201 Created, single resource | Pass |")
+       "birthDate preserved, identifiers unioned | {r} |",
+       r=result_for("Merge: gender=female (incoming from step 6 wins)"))
+    fh("| D | Transaction response format | 200 OK for updated Patient, "
+       "201 Created for Observations | {r} |",
+       r=result_for("Transaction response includes '200 OK' for updated Patient"))
+    fh("| E | No-match individual POST | 201 Created, single resource | {r} |",
+       r=result_for("No-match POST returns single resource (not Bundle)"))
     fh("")
     fh("### Key findings")
     fh("")
