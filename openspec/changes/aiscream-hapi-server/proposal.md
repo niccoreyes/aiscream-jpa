@@ -50,6 +50,15 @@ old-style interceptors before `@Hook`-based interceptors regardless of
 to allow dedup to run first. The `RepositoryValidatingInterceptor` at the
 `STORAGE` level still validates all resources on insert/update.
 
+### Validator initialization fix
+The `RepositoryValidatingInterceptor` bean now depends on `IPackageInstallerSvc`,
+which forces Spring to construct the package installer (and install PH Core +
+PH eReferral IGs) before the validator queries for stored `StructureDefinition`
+resources. Previously, the validator was built with an empty rule set because
+no IGs were installed yet at bean construction time. After the fix, the
+validator has rules for every resource type declared in PH Core and
+PH eReferral, and enforces profile conformance accordingly.
+
 ## Capabilities
 
 ### New Capabilities

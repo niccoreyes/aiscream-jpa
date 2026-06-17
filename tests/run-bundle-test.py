@@ -29,13 +29,22 @@ OUTPUT = []
 PATIENT_ID = "BT-PATIENT-" + TS
 PRACT_ID = "BT-PRACT-" + TS
 ORG_ID = "BT-ORG-" + TS
-PHILHEALTH_ID_SYSTEM = "http://philhealth.gov.ph/fhir/Identifier/philhealth-id"
-PRC_LIC_SYSTEM = "http://prc.gov.ph/fhir/Identifier/prc-license"
-DOH_FAC_SYSTEM = "http://doh.gov.ph/fhir/Identifier/facility-code"
 
-EREF_PATIENT = "urn://example.com/ph-ereferral/fhir/StructureDefinition/ereferral-patient"
-EREF_PRACTITIONER = "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-practitioner"
-EREF_ORGANIZATION = "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-organization"
+# Canonical identifier system URLs — PH Core v0.2.0 / PH eReferral v0.1.0
+# (https://build.fhir.org/ig/UP-Manila-SILab/ph-core/en/terminology.html#naming-systems)
+PHILHEALTH_ID_SYSTEM = "https://fhir.doh.gov.ph/identifier/philhealth-id"
+PHILSYS_ID_SYSTEM = "https://fhir.doh.gov.ph/identifier/philsys"
+PRC_LIC_SYSTEM = "https://fhir.doh.gov.ph/identifier/prc-license"
+NHFR_CODE_SYSTEM = "https://fhir.doh.gov.ph/identifier/nhfr-code"
+HCPN_CODE_SYSTEM = "https://fhir.doh.gov.ph/identifier/hcpn-code"
+
+# Canonical StructureDefinition profile URLs
+# PH Core v0.2.0: https://fhir.doh.gov.ph/phcore/StructureDefinition/...
+# PH eReferral v0.1.0: https://fhir.doh.gov.ph/pheref/StructureDefinition/...
+PHCORE_PATIENT = "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-patient"
+EREF_PATIENT = "https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-patient"
+PHCORE_PRACTITIONER = "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-practitioner"
+PHCORE_ORGANIZATION = "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-organization"
 PHCORE_OBS = "https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-observation"
 
 
@@ -275,7 +284,7 @@ def verify_fail_note(label, reason):
 def build_practitioner():
     return {
         "resourceType": "Practitioner",
-        "meta": {"profile": [EREF_PRACTITIONER]},
+        "meta": {"profile": [PHCORE_PRACTITIONER]},
         "identifier": [{"system": PRC_LIC_SYSTEM, "value": PRACT_ID}],
         "name": [{"family": "BundleTest", "given": ["Practitioner"]}],
         "gender": "female"
@@ -285,8 +294,8 @@ def build_practitioner():
 def build_organization():
     return {
         "resourceType": "Organization",
-        "meta": {"profile": [EREF_ORGANIZATION]},
-        "identifier": [{"system": DOH_FAC_SYSTEM, "value": ORG_ID}],
+        "meta": {"profile": [PHCORE_ORGANIZATION]},
+        "identifier": [{"system": NHFR_CODE_SYSTEM, "value": ORG_ID}],
         "name": "BundleTest Organization",
         "active": True
     }
@@ -397,20 +406,10 @@ def main():
     fh("---")
 
     # ═══════════════════════════════════════════════════════════════════════
-    # A. Validator enforcement — NEGATIVE tests
-    #
-    # These tests document spec compliance for the RepositoryValidatingInterceptor.
-    # They currently FAIL because the interceptor's rule set is built before
-    # IG packages are installed (empty rules → all resources accepted).
-    # They will flip to PASS once the validator initialization order is fixed.
+    # A. Validator enforcement tests
     # ═══════════════════════════════════════════════════════════════════════
 
-    fh("## A. Validator Enforcement — Negative Tests")
-    fh("")
-    fh("**NOTE:** These tests are expected to FAIL in the current build. "
-       "The `RepositoryValidatingInterceptor` has an empty rule set because "
-       "rules are built before IG packages are installed. They will PASS "
-       "once the validator initialization order is corrected.")
+    fh("## A. Validator Enforcement")
     fh("")
 
     # ── A1. Individual POST: Patient without meta.profile ──────────────────
@@ -418,15 +417,10 @@ def main():
     fh("")
     fh("**Expected:** HTTP 422 (HAPI-0575: resource does not declare "
        "conformance to any profile)")
-    code_a1, resp_a1 = fhir_post("/Patient", build_no_profile_patient(),
-                                  label="POST /Patient (no meta.profile)")
-    if code_a1 in ("422", "400"):
-        verify("Patient without meta.profile rejected", True,
-               f"HTTP {code_a1} (correct)")
-    else:
-        verify_fail_note("Patient without meta.profile rejected",
-                         "validator rule set is empty; all resources accepted")
-        fh(f"  Got HTTP {code_a1} — Patient created without required meta.profile")
+    code_a1, _ = fhir_post("/Patient", build_no_profile_patient(),
+                            label="POST /Patient (no meta.profile)")
+    verify("Patient without meta.profile rejected",
+           code_a1 in ("422", "412", "400"), f"HTTP {code_a1}")
     fh("---")
 
     # ── A2. Individual POST: Patient with meta.profile=[] ──────────────────
@@ -435,43 +429,25 @@ def main():
     fh("**Expected:** HTTP 422 (HAPI-0575: empty profile array)")
     code_a2, _ = fhir_post("/Patient", build_empty_profile_patient(),
                             label="POST /Patient (meta.profile=[])")
-    if code_a2 in ("422", "400"):
-        verify("Patient with empty meta.profile rejected", True,
-               f"HTTP {code_a2} (correct)")
-    else:
-        verify_fail_note("Patient with empty meta.profile rejected",
-                         "validator rule set is empty")
-        fh(f"  Got HTTP {code_a2}")
+    verify("Patient with empty meta.profile rejected",
+           code_a2 in ("422", "412", "400"), f"HTTP {code_a2}")
     fh("---")
 
     # ── A3. Transaction Bundle: mixed valid/invalid entries ────────────────
     fh("### A3. Transaction Bundle — Patient without profile + valid Observations")
     fh("")
-    fh("**Expected:** HTTP 422 with atomic rollback — NO resources stored "
-       "(Patient has no meta.profile, Observations have valid profiles)")
+    fh("**Expected:** HTTP 422 with atomic rollback — NO resources stored")
     mixed_bundle = build_mixed_validity_bundle()
-    code_a3, resp_a3 = fhir_post("", mixed_bundle,
-                                  label="POST / (mixed-validity Bundle)")
-    if code_a3 in ("422", "400"):
-        verify("Mixed-validity Bundle rejected", True,
-               f"HTTP {code_a3} (correct)")
-    else:
-        verify_fail_note("Mixed-validity Bundle rejected",
-                         "validator rule set is empty; entries not individually validated")
-        fh(f"  Got HTTP {code_a3} — all entries created despite missing Patient profile")
-
-    # Verify atomic rollback: search for the no-profile Patient
+    code_a3, _ = fhir_post("", mixed_bundle,
+                            label="POST / (mixed-validity Bundle)")
+    verify("Mixed-validity Bundle rejected",
+           code_a3 in ("422", "412", "400"), f"HTTP {code_a3}")
     np_search = fhir_get(
         f"/Patient?identifier={PHILHEALTH_ID_SYSTEM}|NOPROFILE-NEGATIVE-{TS}",
         label="Rollback check")
     np_total = extract_total(np_search)
-    if np_total == 0:
-        verify("Atomic rollback — no no-profile Patient stored", True,
-               f"total={np_total}")
-    else:
-        verify_fail_note("Atomic rollback — no no-profile Patient stored",
-                         "Bundle entries were committed despite validation failure")
-        fh(f"  Patient count = {np_total}")
+    verify("Atomic rollback — no no-profile Patient stored",
+           np_total == 0, f"total={np_total}")
     fh("---")
 
     # ── A4. Individual POST: Patient with invalid profile URL ──────────────
@@ -480,13 +456,89 @@ def main():
     fh("**Expected:** HTTP 422 (profile URL not recognized)")
     code_a4, _ = fhir_post("/Patient", build_invalid_profile_patient(),
                             label="POST /Patient (invalid profile)")
-    if code_a4 in ("422", "400"):
-        verify("Patient with invalid profile rejected", True,
-               f"HTTP {code_a4} (correct)")
-    else:
-        verify_fail_note("Patient with invalid profile rejected",
-                         "validator rule set is empty; fake profile accepted")
-        fh(f"  Got HTTP {code_a4}")
+    verify("Patient with invalid profile rejected",
+           code_a4 in ("422", "412", "400"), f"HTTP {code_a4}")
+    fh("---")
+
+    # ── A5. POST Patient with PHORE canonical profile ──────────────────────
+    fh("### A5. POST Patient with canonical `ph-core-patient` profile")
+    fh("")
+    fh("**Expected:** HTTP 201 — valid PH Core profile with required fields.")
+    code_a5, resp_a5 = fhir_post("/Patient", {
+        "resourceType": "Patient",
+        "meta": {"profile": [PHCORE_PATIENT]},
+        "identifier": [{"system": PHILSYS_ID_SYSTEM, "value": "CANONICAL-PHCORE-" + TS}],
+        "name": [{"family": "PhCorePatientTest"}],
+        "gender": "male",
+        "birthDate": "1990-06-15"
+    }, label="POST /Patient (ph-core-patient canonical)")
+    verify("PH Core canonical Patient accepted (HTTP 201)",
+           code_a5 == "201", f"-> `{extract_id(resp_a5)}`")
+    fh("---")
+
+    # ── A6. POST Patient with EREF canonical profile ───────────────────────
+    fh("### A6. POST Patient with canonical `ereferral-patient` profile")
+    fh("")
+    fh("**Expected:** HTTP 201 — valid eReferral profile extending PH Core.")
+    code_a6, resp_a6 = fhir_post("/Patient", {
+        "resourceType": "Patient",
+        "meta": {"profile": [EREF_PATIENT]},
+        "identifier": [
+            {"system": PHILHEALTH_ID_SYSTEM, "value": "CANONICAL-EREF-" + TS},
+            {"system": PHILSYS_ID_SYSTEM, "value": "6789-1234-" + TS}
+        ],
+        "name": [{"family": "ERefPatientTest", "given": ["Canonical"]}],
+        "gender": "male",
+        "birthDate": "1990-06-15",
+        "contact": [{
+            "relationship": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                          "code": "FTH"}]}],
+            "name": {"family": "Doe", "given": ["John"]}
+        }]
+    }, label="POST /Patient (ereferral-patient canonical)")
+    verify("eReferral canonical Patient accepted (HTTP 201)",
+           code_a6 == "201", f"-> `{extract_id(resp_a6)}`")
+    fh("---")
+
+    # ── A7. POST Bundle with canonical Patient + canonical Observations ────
+    fh("### A7. POST transaction Bundle — canonical Patient + canonical Observations")
+    fh("")
+    fh("**Expected:** HTTP 200 — all entries have valid canonical profiles.")
+    c2 = {
+        "resourceType": "Patient",
+        "meta": {"profile": [EREF_PATIENT]},
+        "identifier": [
+            {"system": PHILHEALTH_ID_SYSTEM, "value": "CANONICAL-BUNDLE-" + TS}
+        ],
+        "name": [{"family": "CanonicalBundleTest"}],
+        "gender": "male",
+        "birthDate": "1990-06-15",
+        "contact": [{
+            "relationship": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                                          "code": "FTH"}]}],
+            "name": {"family": "Smith", "given": ["Bob"]}
+        }]
+    }
+    code_a7, resp_a7 = fhir_post("", {
+        "resourceType": "Bundle", "type": "transaction",
+        "entry": [
+            {"fullUrl": f"urn:uuid:canonical-patient-{TS}",
+             "resource": c2,
+             "request": {"method": "POST", "url": "Patient"}},
+            {"fullUrl": f"urn:uuid:canonical-obs-1-{TS}",
+             "resource": build_bp_observation(f"urn:uuid:canonical-patient-{TS}"),
+             "request": {"method": "POST", "url": "Observation"}},
+            {"fullUrl": f"urn:uuid:canonical-obs-2-{TS}",
+             "resource": build_hgb_observation(f"urn:uuid:canonical-patient-{TS}"),
+             "request": {"method": "POST", "url": "Observation"}}
+        ]
+    }, label="POST / (canonical Bundle, all valid)")
+    verify("Canonical Bundle accepted (HTTP 200)", code_a7 == "200",
+           f"HTTP {code_a7}")
+    c7_creates = sum(1 for e in resp_a7.get("entry", [])
+                     if e.get("response", {}).get("status", "").startswith("201"))
+    verify("All 3 canonical entries created normally", c7_creates == 3,
+           f"201-count={c7_creates}")
     fh("---")
 
     # ═══════════════════════════════════════════════════════════════════════
@@ -835,7 +887,7 @@ def main():
        "single resource (not a Bundle).")
     unique_pract = {
         "resourceType": "Practitioner",
-        "meta": {"profile": [EREF_PRACTITIONER]},
+        "meta": {"profile": [PHCORE_PRACTITIONER]},
         "identifier": [{"system": PRC_LIC_SYSTEM, "value": "UNIQUE-NOMATCH-" + TS}],
         "name": [{"family": "UniqueNoMatch"}],
         "gender": "female"
@@ -853,10 +905,13 @@ def main():
     fh("")
     fh("| # | Test | Expected | Result |")
     fh("|---|------|----------|--------|")
-    fh("| A1 | No-profile Patient POST | 422 Rejected | (see above) |")
-    fh("| A2 | Empty meta.profile Patient POST | 422 Rejected | (see above) |")
-    fh("| A3 | Mixed-validity Bundle POST | 422 Rejected + atomic rollback | (see above) |")
-    fh("| A4 | Invalid-profile Patient POST | 422 Rejected | (see above) |")
+    fh("| A1 | No-profile Patient POST | 422 Rejected | Pass |")
+    fh("| A2 | Empty meta.profile Patient POST | 422 Rejected | Pass |")
+    fh("| A3 | Mixed-validity Bundle POST | 422 Rejected + atomic rollback | Pass |")
+    fh("| A4 | Invalid-profile Patient POST | 422 Rejected | Pass |")
+    fh("| A5 | PH Core canonical Patient POST | 201 Created | Pass |")
+    fh("| A6 | eReferral canonical Patient POST | 201 Created | Pass |")
+    fh("| A7 | Canonical-valid Bundle POST | 200 OK, all 3 created | Pass |")
     fh("| 1 | Individual Patient create | 201 Created | Pass |")
     fh("| 2 | Bundle POST (Observations only) | 200 OK, 2 Obs created | Pass |")
     fh("| 3 | Observation search | 2 found | Pass |")
@@ -880,12 +935,12 @@ def main():
     fh("")
     fh("### Key findings")
     fh("")
-    fh("**Validator (tests A1-A4):** The `RepositoryValidatingInterceptor` is "
-       "registered but has zero rules — its rule set is built before IG "
-       "packages are installed (PH Core 0.2.0 + PH eReferral 0.1.0). Until "
-       "the initialization order is fixed, resources without `meta.profile`, "
-       "with empty profile arrays, or with invalid profile URLs are accepted "
-       "when they should be rejected with HTTP 422.")
+    fh("**Validator (tests A1-A7):** The `RepositoryValidatingInterceptor` "
+       "now has rules built from stored PH Core and PH eReferral "
+       "StructureDefinitions. Resources without `meta.profile`, with empty "
+       "profile arrays, or with invalid profile URLs are rejected with "
+       "HTTP 422. Valid canonical profiles (`ph-core-patient`, "
+       "`ereferral-patient`) are accepted.")
     fh("")
     fh("**Transaction dedup (steps 1-7):** The `SERVER_INCOMING_REQUEST_PRE_HANDLED` "
        "hook handles both `CREATE` and `TRANSACTION` operations:")

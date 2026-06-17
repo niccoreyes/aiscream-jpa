@@ -73,9 +73,19 @@ The interceptor MUST:
 3. For each type, require at least one stored profile in `meta.profile`
 4. Validate each resource against all declared profiles
 
-The interceptor SHALL hook into `STORAGE_PRESTORAGE_RESOURCE_CREATED` and
-`STORAGE_PRESTORAGE_RESOURCE_UPDATED` pointcuts, intercepting HTTP POST/PUT,
-Bundle entries, FHIR patches, and internal JPA API writes.
+The interceptor SHALL be built **after** IG packages (PH Core 0.2.0 and
+PH eReferral 0.1.0) are installed as stored `StructureDefinition` resources.
+The Spring bean definition for `repositoryValidatingInterceptor` depends on
+`IPackageInstallerSvc`, ensuring the package installer completes before the
+validator queries for available profiles.
+
+#### Scenario: Validator rules populated from stored IGs
+- **WHEN** the server starts with `enable_repository_validating_interceptor: true`
+  and IG packages are installed
+- **THEN** the validator builds rules from the PH Core and PH eReferral
+  StructureDefinitions loaded at startup
+- **AND** each resource type has at least one `requireAtLeastOneProfileOf` rule
+  and one `requireValidationToDeclaredProfiles` rule
 
 #### Scenario: Resource with valid profile is accepted
 - **WHEN** a resource is POSTed with a valid PH Core or PH eReferral profile in
@@ -212,7 +222,9 @@ identifiers.
 
 The deduplication behavior MUST:
 1. Search for existing resources with identical identifier system+value pairs
-2. Match Patient by PhilHealth ID or PhilSys ID (either one suffices)
+2. Match Patient by `https://fhir.doh.gov.ph/identifier/philsys` (PhilSys) or
+   `https://fhir.doh.gov.ph/identifier/philhealth-id` (PhilHealth ID) —
+   either one suffices
 3. Match Practitioner and Organization by any identifier system+value pair
 4. Pick the newest existing resource if multiple matches exist (by
    `meta.lastUpdated`)
