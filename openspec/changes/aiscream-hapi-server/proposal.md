@@ -33,7 +33,7 @@ image (`niccoreyes/aiscream-hapi:latest`) was built.
   `.suppressWarningForExtensibleValueSetValidation()` for strict terminology
   enforcement
 - **PhCoreDeduplicationInterceptor.java**: New interceptor in
-  `ph.ereferral.interceptor` for auto-merge on identifier match:
+  `ph.phcore.interceptor` for auto-merge on identifier match:
   - Hooks `SERVER_INCOMING_REQUEST_PRE_HANDLED` for both `CREATE` and
     `TRANSACTION` operations
   - For individual POST: merges via DAO and returns dedup Bundle

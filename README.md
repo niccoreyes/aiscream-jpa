@@ -303,9 +303,9 @@ See `application.yaml` for all settings. Key properties:
 hapi:
   fhir:
     enable_repository_validating_interceptor: true  # auto-validation
-    custom-bean-packages: ph.ereferral.interceptor   # scan dedup interceptor
+    custom-bean-packages: ph.phcore.interceptor   # scan dedup interceptor
     custom-interceptor-classes:
-      - ph.ereferral.interceptor.PhCoreDeduplicationInterceptor
+      - ph.phcore.interceptor.PhCoreDeduplicationInterceptor
     validation:
       requests_enabled: false  # must be false: RequestValidatingInterceptor
                                # runs before PRE_HANDLED hooks

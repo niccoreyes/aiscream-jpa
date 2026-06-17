@@ -54,9 +54,9 @@ hapi:
       - https://unitsofmeasure.org/*
       - http://loinc.org/*
       - https://loinc.org/*
-    custom-bean-packages: ph.ereferral.interceptor
+    custom-bean-packages: ph.phcore.interceptor
     custom-interceptor-classes:
-      - ph.ereferral.interceptor.PhCoreDeduplicationInterceptor
+      - ph.phcore.interceptor.PhCoreDeduplicationInterceptor
 
     remote_terminology_service:
       all:
