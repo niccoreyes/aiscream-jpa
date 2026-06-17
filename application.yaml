@@ -45,6 +45,12 @@ hapi:
            - "hl7.fhir.uv.extensions.r4"
            - "hl7.terminology.r5"
            - "fhir.ph.core"
+      hl7_extensions_r4:
+        name: hl7.fhir.uv.extensions.r4
+        version: 5.3.0
+        reloadExisting: false
+        installMode: STORE_AND_INSTALL
+        fetchDependencies: false
     logical_urls:
       - http://terminology.hl7.org/*
       - https://terminology.hl7.org/*

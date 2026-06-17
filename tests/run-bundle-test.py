@@ -21,7 +21,7 @@ import time
 from datetime import datetime
 from textwrap import dedent
 
-BASE_URL = "https://fhirportal.telehealth.ph/eref/fhir"
+BASE_URL = "http://localhost:8080/fhir"
 TS = datetime.now().strftime("%Y%m%d-%H%M%S")
 REPORT_FILE = f"tests/bundle-transaction-test-{TS}.md"
 OUTPUT = []
@@ -104,6 +104,60 @@ def fhir_get(path, label="GET"):
     fh("```")
     fh("")
     return resp
+
+
+def fhir_read_direct(resource_id, resource_type="Patient"):
+    """Silent direct read by ID — no markdown output."""
+    cmd = ["curl", "-s", "-X", "GET",
+           f"{BASE_URL}/{resource_type}/{resource_id}",
+           "-H", "Accept: application/json"]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return {"_raw": result.stdout}
+
+
+def check_persist(label, resource_id, resource_type="Patient"):
+    """Verify a resource exists by direct ID read, with retries."""
+    for _ in range(5):
+        time.sleep(0.5)
+        resp = fhir_read_direct(resource_id, resource_type)
+        if resp.get("resourceType") == resource_type:
+            return True
+    verify_persist(label, False, resource_id,
+                   "Not found after 5 retries (possible STORAGE rollback)")
+    return False
+
+
+def search_idents(resource_type, system, value, label, retries=3):
+    """Search by identifier with retries for indexing delay."""
+    path = f"/{resource_type}?identifier={system}|{value}"
+    for attempt in range(retries):
+        time.sleep(1.0)
+        cmd = ["curl", "-s", "-X", "GET", f"{BASE_URL}{path}",
+               "-H", "Accept: application/json"]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        try:
+            resp = json.loads(result.stdout)
+            total = resp.get("total", len(resp.get("entry", [])))
+            if total > 0:
+                fh("### {label} {path} (retry {n})", label=label, path=path, n=attempt+1)
+                fh("")
+                fh("**Response:** total={total}", total=total)
+                fh("")
+                return resp, total
+        except json.JSONDecodeError:
+            pass
+    resp = fhir_get(path, label)
+    total = extract_total(resp)
+    return resp, total
+
+
+def verify_persist(label, condition, resource_id, detail=""):
+    mark = "PERSIST" if condition else "NOPERSIST"
+    fh("- **[{mark}]** {label} `{rid}` {detail}",
+       mark=mark, label=label, rid=resource_id, detail=detail)
 
 
 def extract_id(resp):
@@ -554,6 +608,7 @@ def main():
     fh("**Extracted Patient ID:** `{patient_id}`", patient_id=patient_id)
     verify("Patient created (HTTP 201)", code1 == "201",
            f"→ `{patient_id}`")
+    persisted = check_persist("Patient persisted after create", patient_id)
     fh("---")
 
     # ── 2. POST Transaction Bundle of Observations ─────────────────────────
@@ -622,9 +677,9 @@ def main():
     fh("")
     fh("- `{patient_id}` (the original, updated with merged fields from step 4)",
        patient_id=patient_id)
-    mid_search = fhir_get(
-        f"/Patient?identifier={PHILHEALTH_ID_SYSTEM}|{PATIENT_ID}")
-    mid_total = extract_total(mid_search)
+    mid_search, mid_total = search_idents(
+        "Patient", PHILHEALTH_ID_SYSTEM, PATIENT_ID,
+        "Search Patients by Identifier — Check Dedup")
     mid_ids = extract_patient_ids(mid_search)
     verify(f"Only 1 Patient exists (transaction dedup worked)",
            mid_total == 1, f"total={mid_total}, ids={mid_ids}")
@@ -691,9 +746,9 @@ def main():
     fh("After the individual dedup POST (step 6), the duplicate was merged into "
        "the existing Patient. Since transaction dedup also worked (step 4-5), "
        "there was never a duplicate to begin with. Expect **1 Patient**.")
-    final_search = fhir_get(
-        f"/Patient?identifier={PHILHEALTH_ID_SYSTEM}|{PATIENT_ID}")
-    final_total = extract_total(final_search)
+    final_search, final_total = search_idents(
+        "Patient", PHILHEALTH_ID_SYSTEM, PATIENT_ID,
+        "Final Verification — Search Patient")
     final_ids = extract_patient_ids(final_search)
     verify(f"Exactly 1 Patient exists (dedup worked at both individual and "
            f"transaction level)",
