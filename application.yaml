@@ -26,13 +26,18 @@ hapi:
     enforce_referential_integrity_on_write: true
 
     validation:
-      # requests_enabled MUST remain false. The RequestValidatingInterceptor
-      # (old-style IServerInterceptor) fires at SERVER_INCOMING_REQUEST_POST_PROCESSED,
-      # which HAPI invokes BEFORE @Hook(SERVER_INCOMING_REQUEST_PRE_HANDLED) — the
-      # pointcut used by PhCoreDeduplicationInterceptor. Enabling this would validate
-      # the pre-merge (stale) incoming resource before dedup runs, breaking the flow.
+      # RequestValidatingInterceptor fires at SERVER_INCOMING_REQUEST_POST_PROCESSED
+      # (RestfulServer.handleRequest() at line 1182). PhCoreDeduplicationInterceptor fires
+      # at SERVER_INCOMING_REQUEST_PRE_HANDLED (BaseMethodBinding.invokeServerMethod() at
+      # line 258). Despite the pointcut names, POST_PROCESSED runs BEFORE PRE_HANDLED in
+      # HAPI's pipeline because invokeServerMethod() is called from invokeServer() at
+      # RestfulServer line 1203, after the POST_PROCESSED hook block completes. This means
+      # with requests_enabled: true, validation runs first; dedup fires only on payloads
+      # that pass validation.
+      # RepositoryValidatingInterceptor (enable_repository_validating_interceptor) provides
+      # additional post-merge validation at STORAGE_PRESTORAGE_RESOURCE_CREATED.
       # The $validate FHIR operation endpoint is always available and not gated here.
-      requests_enabled: false
+      requests_enabled: true
       responses_enabled: true
 
     implementationguides:
