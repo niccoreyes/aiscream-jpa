@@ -94,10 +94,10 @@ Two mechanisms are configured:
   `hapi-extra-classes/src/main/java/ext/`. At startup it searches stored resource
   StructureDefinitions whose canonical URLs begin with the PH Core profile
   prefix, groups them by resource type, and identifies the root profile for
-  each type. It applies that profile as an implied baseline even if a resource
-  omits `meta.profile` or declares another profile. Additional declared profiles
-  can also be validated. Types with no matching stored profile receive no rule
-  from this factory.
+  each type. It applies that profile as an implied baseline when `meta.profile`
+  is empty or absent. If any profile is declared, this implied rule is skipped;
+  request validation checks declared profiles. Types with no matching stored
+  profile receive no rule from this factory.
 
 The factory expects exactly one root PH Core profile per discovered resource
 type; it fails startup if it finds more or fewer. Rules are constructed at

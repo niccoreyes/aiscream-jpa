@@ -66,11 +66,10 @@ public class RepositoryValidationInterceptorFactoryR4 {
 						+ " but found " + baselineProfiles.size() + ". Configure a baseline explicitly for this resource type.");
 			}
 
-			// Enforce the PH Core baseline even when clients omit meta.profile or declare
-			// another profile. HAPI also validates any additional declared profiles.
+			// Default to the PH Core baseline when no profile is declared.
 			ruleBuilder
 					.forResourcesOfType(resourceType)
-					.impliedProfileAlways(baselineProfiles.get(0).getUrl());
+					.impliedProfileIfNotExplicit(baselineProfiles.get(0).getUrl());
 		});
 
 		List<IRepositoryValidatingRule> rules = ruleBuilder.build();
