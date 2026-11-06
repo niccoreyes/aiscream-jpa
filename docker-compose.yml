@@ -1,14 +1,33 @@
 services:
   fhir:
     container_name: hapi
-    image: "niccoreyes/aiscream-hapi:latest"
+    image: "hapiproject/hapi:latest"
+    # restart: on-failure
     ports:
       - "8080:8080"
     configs:
       - source: hapi
         target: /app/config/application.yaml
+      # Upstream README file-based example for custom classes or interceptors.
+      # configs.file requires a regular file; the supplied local placeholder
+      # is a directory. Use the volume below or point the config at a file.
+      # Enable this together with hapi-extra-classes under configs below.
+      # - source: hapi-extra-classes
+      #   target: /app/extra-classes
+      # Optional local MDM rules; also enable the mdm-rules config below.
+      # - source: mdm-rules
+      #   target: /app/config/mdm-rules.json
+    # Optional volumes; uncomment the mapping and only the paths you need.
+    # volumes:
+    #   - ./lucene_indexes:/app/target/lucene_indexes
+    #   - ./hapi-extra-classes:/app/extra-classes:ro
     depends_on:
       - db
+    # To wait for PostgreSQL readiness, enable the db healthcheck below and
+    # replace the depends_on list above with this mapping:
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
 
   db:
     image: "postgres:17.2-bookworm"
@@ -17,9 +36,25 @@ services:
       POSTGRES_PASSWORD: admin
       POSTGRES_USER: admin
       POSTGRES_DB: hapi
+    # Optional readiness check, used with condition: service_healthy above.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d hapi"]
+      interval: 10s
+      timeout: 5s
+      start_period: 5s
+      retries: 5
     volumes:
       - ./hapi.postgress.data:/var/lib/postgresql/data
 
 configs:
   hapi:
      file: ./application.yaml
+  # Upstream README example: configs.file must refer to a local file, not the
+  # supplied hapi-extra-classes/ directory. Change the path if using this form.
+  # Register the custom class in application.yaml as well.
+  # hapi-extra-classes:
+  #   file: ./hapi-extra-classes
+  # Optional local MDM rules. Enable its service config above and set the
+  # file: location in application.yaml when enabling MDM.
+  # mdm-rules:
+  #   file: ./mdm-rules.json

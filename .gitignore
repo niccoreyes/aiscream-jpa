@@ -169,10 +169,5 @@ Temporary Items
 # Helm Chart dependencies
 **/charts/*.tgz
 
-# generated from `docker compose up`
-hapi-fhir-jpaserver-starter/
-hapi.postgress.data
-
-hapi.postgress.data
-session-ses_12f2.md
-__pycache__/
+# PostgreSQL data from Docker Compose
+hapi.postgress.data/
