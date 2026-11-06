@@ -399,9 +399,10 @@ hapi:
       requests_enabled: true
       responses_enabled: false
     # Repository validation is separate from request/response validation.
-    # WARNING: the starter's R4 factory hardcodes US Core
-    # (Patient requires http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient),
-    # so enabling this rejects every Patient under PH Core. Leave it off.
+    # ext.RepositoryValidationInterceptorFactoryR4 (hapi-extra-classes/) supplies the
+    # interceptor as an unconditional @Primary bean, so the starter's own factory switch
+    # stays off and its unfiltered stored-SD rules are never built.
+    # Rules are derived from every stored PH Core StructureDefinition at startup.
     # enable_repository_validating_interceptor: true
 
     # -------------------------------------------------------------------------------
@@ -512,7 +513,8 @@ hapi:
     # custom-interceptor-classes:
     #   - org.example.fhir.interceptor.ExampleInterceptor
 
-    # custom-bean-packages:
+    # Our interceptor factory lives in hapi-extra-classes/ (see source and jar there).
+    custom-bean-packages: ext
     # custom-interceptor-classes:
     # custom-provider-classes:
 
