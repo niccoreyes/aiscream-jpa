@@ -4,6 +4,7 @@ services:
     working_dir: /src
     volumes:
       - ./hapi-extra-classes:/src
+      - maven-cache:/root/.m2
     command:
       - sh
       - -c
@@ -53,6 +54,9 @@ services:
       retries: 5
     volumes:
       - ./hapi.postgress.data:/var/lib/postgresql/data
+
+volumes:
+  maven-cache:
 
 configs:
   hapi:

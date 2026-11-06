@@ -10,9 +10,9 @@
 The `depends_on` condition makes Compose run the `interceptor` builder first: it mounts
 `hapi-extra-classes/` at `/src`, removes stale `ext/`, runs `mvn -q -B clean package`,
 and removes Maven's `target/` directory on exit. The generated runtime class is copied
-back into `ext/` in the same folder. HAPI is force-recreated only after compilation
-succeeds, so it loads the new class. Maven redownloads dependencies on each build; there
-is no persistent Maven cache volume.
+back into `ext/` in the same folder. HAPI starts only after compilation succeeds,
+so it loads the new class. Maven dependencies persist in the `maven-cache` named
+volume; `docker compose down -v` removes that cache.
 
 Run `./up.sh` after Java changes. A plain `docker compose up` builds first on a clean
 start, but may reuse the successful one-shot builder after later source changes. If you

@@ -51,8 +51,9 @@ changes: a plain `docker compose up` can reuse an already completed builder.
 The build removes stale `hapi-extra-classes/ext/`, compiles against the HAPI
 8.12.0 dependencies in the POM, writes the class under `ext/`, and removes
 temporary Maven `target/` output on exit. The folder is mounted at
-`/app/extra-classes` for HAPI to load. Maven dependencies are downloaded on
-each build; no persistent Maven cache is configured.
+`/app/extra-classes` for HAPI to load. Maven dependencies are retained in the
+Compose named volume `maven-cache` and reused across builds. The first build
+still needs network access to download dependencies.
 
 The HAPI image uses the mutable `latest` tag, while the custom code compiles
 against a fixed HAPI version. A future image can therefore introduce
@@ -167,7 +168,8 @@ and [search documentation](https://hapifhir.io/hapi-fhir/docs/server_jpa/elastic
   compiled class is current.
 - Stop and remove the Compose containers and network while retaining database
   data with `docker compose down`. A normal restart is `docker compose down`
-  followed by `./up.sh`.
+  followed by `./up.sh`. This retains the Maven cache; `docker compose down -v`
+  removes the named cache volume and the next build must download dependencies again.
 - `./down.sh` also stops the stack, then separately prompts whether to delete
   generated Java output and the PostgreSQL directory. Each prompt defaults to
   no after two seconds. Confirming deletion of the database is permanent.
