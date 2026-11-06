@@ -7,7 +7,8 @@
 docker compose down && docker compose up -d
 ```
 
-### Restart fresh (wipes database, clean slate)
+### Restart fresh (wipes database, clean slate) 
+Avoid doing this unless you are on a repeated error, or if the changes necessitate starting from scratch
 ```bash
 docker compose down -v && rm -rf hapi.postgress.data && docker compose up -d
 ```

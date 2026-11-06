@@ -229,14 +229,31 @@ hapi:
     # install_transitive_ig_dependencies: true
     # implementationguides:
     # The mapping is already active below; add example children under it.
+    # Dependencies are pinned here so HAPI uses these exact versions instead of
+    # resolving PH Core's transitive graph, which selects an incompatible
+    # extensions.r4 release. Keep these versions in sync with PH Core, keep the
+    # list ordered dependencies-first, and leave fetchDependencies off.
+    # hl7.fhir.r4.core is omitted: the R4 definitions ship with the server.
     implementationguides:
+      terminology_r4:
+        name: hl7.terminology.r4
+        version: 7.5.0
+        reloadExisting: false
+        installMode: STORE_AND_INSTALL
+        fetchDependencies: false
+      extensions_r4:
+        name: hl7.fhir.uv.extensions.r4
+        version: 5.3.0
+        reloadExisting: false
+        installMode: STORE_AND_INSTALL
+        fetchDependencies: false
       ph_core:
         name: fhir.ph.core
         version: 0.2.1
         reloadExisting: false
         installMode: STORE_AND_INSTALL
         packageUrl: https://fhir.doh.gov.ph/phcore/0.2.1/package.tgz
-        fetchDependencies: true
+        fetchDependencies: false
     #   swiss:
     #     name: swiss.mednet.fhir
     #     version: 0.8.0
