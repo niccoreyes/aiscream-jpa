@@ -391,12 +391,17 @@ hapi:
     # G. Narrative & Validation
     # -------------------------------------------------------------------------------
     # narrative_enabled: false
-    # validation:
-    #   requests_enabled: true
-    #   responses_enabled: true
+    # Write-time validation: validates POST/PUT payloads (including each entry of a
+    # transaction Bundle) against the profiles declared in meta.profile and fails
+    # the request on ERROR severity. Without this the server stores non-conformant
+    # resources and only $validate reports the violations.
+    validation:
+      requests_enabled: true
+      responses_enabled: false
     # Repository validation is separate from request/response validation.
-    # It builds rules from stored StructureDefinitions at initialization;
-    # verify installed profiles and rule coverage before enabling it.
+    # WARNING: the starter's R4 factory hardcodes US Core
+    # (Patient requires http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient),
+    # so enabling this rejects every Patient under PH Core. Leave it off.
     # enable_repository_validating_interceptor: true
 
     # -------------------------------------------------------------------------------
