@@ -25,8 +25,10 @@ docker compose ps
 curl -fsS http://localhost:8080/fhir/metadata | python3 -m json.tool
 ```
 
-The FHIR base URL is **http://localhost:8080/fhir**. The metadata response is
-the server's CapabilityStatement. To follow startup or investigate a failure:
+Use **http://localhost:8080/fhir** to access the server locally. The
+CapabilityStatement base URL is configured with `hapi.fhir.server_address`;
+the homepage's **FHIR Base** link is configured separately with
+`hapi.fhir.tester.home.server_address`. To follow startup or investigate a failure:
 
 ```bash
 docker compose logs -f fhir
@@ -204,3 +206,97 @@ network exposure before using real patient data.
 Useful references: [HAPI JPA configuration](https://hapifhir.io/hapi-fhir/docs/server_jpa/configuration.html),
 [validation support](https://hapifhir.io/hapi-fhir/docs/validation/validation_support_modules.html),
 and [package installation](https://hapifhir.io/hapi-fhir/docs/server_jpa/packages.html).
+
+## Local HTTPS demo on macOS
+
+To record a browser demo using the URL `https://phcore.thomasreyes.ph/fhir/...`
+while HAPI continues to run at `http://localhost:8080/fhir`, use Caddy as a
+temporary local TLS reverse proxy. This does not change public DNS or configure
+TLS in HAPI. Only this Mac will use the local proxy while the `/etc/hosts`
+override is present. The Mac must trust Caddy's local CA for the browser to show
+a trusted HTTPS connection.
+
+### Install Caddy (if needed)
+
+```bash
+brew install caddy
+```
+
+### Temporarily map the demo hostname to this Mac
+
+Check `/etc/hosts` first to avoid adding a duplicate. If no mapping exists, add:
+
+```bash
+printf '\n127.0.0.1 phcore.thomasreyes.ph\n' | sudo tee -a /etc/hosts
+```
+
+While this entry exists, this Mac will reach the local proxy instead of the
+public `phcore.thomasreyes.ph` site.
+
+### Create a temporary Caddyfile
+
+Save the following as `Caddyfile` in this repository (or another convenient
+local folder):
+
+```caddyfile
+{
+    auto_https disable_redirects
+}
+
+phcore.thomasreyes.ph {
+    tls internal
+    bind 127.0.0.1
+
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+This forwards all paths, including `/`, to HAPI and preserves the original
+request path. The example assumes HAPI is available at `http://127.0.0.1:8080`,
+with the FHIR API under `/fhir` as in the local server check above.
+
+### Start and use the proxy
+
+Start HAPI first, then run Caddy in a terminal from the folder containing the
+`Caddyfile`:
+
+```bash
+sudo caddy run --config "$PWD/Caddyfile"
+```
+
+Caddy listens on HTTPS port 443. The first run may prompt for permission to
+trust its local CA. If automatic trust does not succeed, leave Caddy running
+and run this in another terminal:
+
+```bash
+sudo caddy trust
+```
+
+Open `https://phcore.thomasreyes.ph/fhir/metadata` in the browser. The TLS
+connection is encrypted between the browser and local Caddy; Caddy forwards to
+HAPI over loopback HTTP. No OAuth or browser insecure-content exception is
+needed for this setup. The locally trusted certificate and hosts override are
+for this Mac only; another computer will not inherit them.
+
+### Undo the demo setup
+
+While Caddy is still running, remove trust for its local CA:
+
+```bash
+sudo caddy untrust
+```
+
+Then stop Caddy with `Ctrl+C`. Remove only the demo mapping from `/etc/hosts`
+by editing the file with administrator privileges and deleting this line:
+
+```text
+127.0.0.1 phcore.thomasreyes.ph
+```
+
+Remove the temporary `Caddyfile` if it is no longer needed. Caddy can remain
+installed for future demos; if it was installed just for this, uninstall it
+with `brew uninstall caddy`. `caddy untrust` removes trust from local trust
+stores; Caddy's local CA files may remain in its data directory.
+
+This is a local demo setup, not production transport security. Use synthetic
+data and do not expose the local HAPI service or Caddy listener to a network.

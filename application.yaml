@@ -217,7 +217,7 @@ hapi:
     # use_apache_address_strategy_https: false
     # custom_content_path: ./custom               # folder name must be 'custom'
     # app_content_path: ./configs/app            # served under /web/app
-    # server_address: http://hapi.fhir.org/baseR4
+    server_address: https://phcore.thomasreyes.ph/fhir # http://hapi.fhir.org/baseR4
     # defer_indexing_for_codesystems_of_size: 101
 
     # -------------------------------------------------------------------------------
@@ -364,7 +364,7 @@ hapi:
     # allow_contains_searches: true
     # allow_external_references: true
     # allow_multiple_delete: true
-    # allow_override_default_search_params: true
+    allow_override_default_search_params: true
     # auto_create_placeholder_reference_targets: false
     # mass_ingestion_mode_enabled: false
     # auto_version_reference_at_paths: Device.patient, Device.location, Device.parent, DeviceMetric.parent, DeviceMetric.source, Observation.device, Observation.subject
@@ -628,12 +628,11 @@ hapi:
     # -------------------------------------------------------------------------------
     # S. Testers (webui)
     # -------------------------------------------------------------------------------
-    # tester:
-      # home:
-        # name: Local Tester
-        # server_address: 'http://localhost:8080/fhir'
-        # refuse_to_fetch_third_party_urls: false
-        # fhir_version: R4
+    tester:
+      home:
+        name: PH Core
+        server_address: 'https://phcore.thomasreyes.ph/fhir'
+        fhir_version: R4
 
     # -------------------------------------------------------------------------------
     # T. Outbound HTTP client (RestfulClientFactory)

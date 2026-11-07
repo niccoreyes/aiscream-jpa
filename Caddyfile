@@ -1,0 +1,10 @@
+{
+    auto_https disable_redirects
+}
+
+phcore.thomasreyes.ph {
+    bind 127.0.0.1
+    tls internal
+
+    reverse_proxy 127.0.0.1:8080
+}
