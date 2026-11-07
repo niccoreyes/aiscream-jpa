@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AISCREAM JPA · Local HTTPS guide</title>
+<meta name="description" content="Architecture and repeatable setup for HAPI FHIR local HTTPS using Caddy and Docker Desktop. Understand up.sh, down.sh, certificate trust and recovery.">
+<link rel="stylesheet" href="guide.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to guide</a>
+<aside>
+<a class="brand" href="#overview">AISCREAM JPA</a>
+<small>Local HTTPS operations</small>
+<nav aria-label="Guide sections">
+<a href="#overview">Overview</a>
+<a href="#startup-architecture">Startup architecture</a>
+<a href="#shutdown-architecture">Shutdown architecture</a>
+<a href="#repeat-the-setup-on-another-mac">Repeat the setup on another Mac</a>
+<a href="#configuration-and-file-ownership">Configuration and file ownership</a>
+<a href="#troubleshooting-and-recovery">Troubleshooting and recovery</a>
+<a href="#changes-and-verification-record">Changes and verification record</a>
+</nav>
+<a class="repo" href="https://github.com/niccoreyes/aiscream-jpa">View repository ↗</a>
+</aside>
+<details class="mobile-nav">
+<summary>Guide contents</summary>
+<nav aria-label="Mobile guide sections">
+<a href="#overview">Overview</a>
+<a href="#startup-architecture">Startup architecture</a>
+<a href="#shutdown-architecture">Shutdown architecture</a>
+<a href="#repeat-the-setup-on-another-mac">Repeat the setup on another Mac</a>
+<a href="#configuration-and-file-ownership">Configuration and file ownership</a>
+<a href="#troubleshooting-and-recovery">Troubleshooting and recovery</a>
+<a href="#changes-and-verification-record">Changes and verification record</a>
+</nav>
+</details>
+<main id="main">
+<header id="overview">
+<div class="eyebrow">HAPI FHIR / OPERATIONS GUIDE</div>
+<h1>Local HTTPS.<br>From startup to shutdown.</h1>
+<p class="lead">One configured URL for the browser, the FHIR API and the tester. How Caddy, Docker and the scripts fit together.</p>
+<div class="meta">
+<span>macOS + Docker Desktop</span>
+<span>Updated 7 November 2026</span>
+</div>
+<div class="commands">Start <code>./up.sh</code> <span>Stop</span> <code>./down.sh</code>
+</div>
+<div class="tools">
+<button type="button" id="print-guide">Print or save as PDF</button>
+<a href="https://github.com/niccoreyes/aiscream-jpa/tree/main/docs">Edit this guide</a>
+</div>
+</header>
+<p>A practical guide to starting, stopping and reproducing the HAPI FHIR demo environment with Docker Desktop and Caddy on macOS. Prepared 7 November 2026 from the current repository scripts.</p>
+<p>Run ./up.sh to prepare local HTTPS and start HAPI. Run ./down.sh to stop the stack and reverse the recorded system changes. Both the tester target and the advertised FHIR base use one configured URL.</p>
+<figure class="flow">
+<ol>
+<li>
+<span>01</span>
+<div>
+<strong>Browser on the Mac</strong>
+<p>HTTPS hostname resolves to 127.0.0.1 through the Mac hosts file.</p>
+</div>
+</li>
+<li>
+<span>02</span>
+<div>
+<strong>Caddy on the Mac</strong>
+<p>Loopback HTTPS port 443 using Caddy’s internal CA.</p>
+</div>
+</li>
+<li>
+<span>03</span>
+<div>
+<strong>HAPI in Docker</strong>
+<p>Caddy forwards HTTP to the published port 8080. API path /fhir.</p>
+</div>
+</li>
+<li>
+<span>04</span>
+<div>
+<strong>PostgreSQL in Docker</strong>
+<p>The db service persists data in hapi.postgress.data.</p>
+</div>
+</li>
+</ol>
+</figure>
+<h3>The tester makes a second request</h3>
+<p>The HAPI homepage fetches /fhir/metadata from inside its Java container. Docker maps the configured hostname to host-gateway, allowing that request to reach Caddy on the Mac. Java trusts Caddy through a mounted truststore. Browser trust and Java trust are separate.</p>
+<h3>Why the original warning appeared</h3>
+<p>The tester resolved phcore.thomasreyes.ph to 127.0.0.1 inside its container and tried port 443 there. That loopback address referred to HAPI itself, where no HTTPS listener existed. Hostname routing and Java CA trust fix that request while retaining the displayed HTTPS URL.</p>
+<section id="startup-architecture" aria-labelledby="startup-architecture-title">
+<div class="eyebrow">01 / GUIDE</div>
+<h2 id="startup-architecture-title">Startup architecture</h2>
+<figure class="flow">
+<ol>
+<li>
+<span>01</span>
+<div>
+<strong>Load configuration</strong>
+<p>Source trusted .env and choose HTTP or local HTTPS.</p>
+</div>
+</li>
+<li>
+<span>02</span>
+<div>
+<strong>Prepare Caddy</strong>
+<p>Validate tools and URL. Save existing config or start a background instance.</p>
+</div>
+</li>
+<li>
+<span>03</span>
+<div>
+<strong>Prepare trust and routing</strong>
+<p>Retain Java CAs, add Caddy root, add hosts entry only if absent.</p>
+</div>
+</li>
+<li>
+<span>04</span>
+<div>
+<strong>Build and start</strong>
+<p>Recreate interceptor builder; wait for PostgreSQL and successful compilation.</p>
+</div>
+</li>
+<li>
+<span>05</span>
+<div>
+<strong>Verify readiness</strong>
+<p>Poll metadata, fetch HTTPS homepage, reject conformance warning.</p>
+</div>
+</li>
+</ol>
+</figure>
+<h3>HTTP branch</h3>
+<p>Without LOCAL_HTTPS=true, the script uses the base Compose file. It still rebuilds the interceptor and waits for metadata. The default FHIR URL is http://localhost:8080/fhir. A leftover local HTTPS hostname marker causes an explicit stop: run down.sh before switching modes.</p>
+<h3>Caddy conditions</h3>
+<p>If the admin API on localhost:2019 responds, the script accepts only one server with one route matching the requested hostname. It saves the original JSON config and loads a simple loopback proxy. This is a coarse compatibility check, not a general merge of custom Caddy settings.</p>
+<p>Otherwise it starts its own Caddy on admin port 2020, unless its recorded process is already alive. A conflicting listener on port 443 stops setup. Its own process is started in the background, so a separate Caddy terminal is unnecessary.</p>
+</section>
+<section id="shutdown-architecture" aria-labelledby="shutdown-architecture-title">
+<div class="eyebrow">02 / GUIDE</div>
+<h2 id="shutdown-architecture-title">Shutdown architecture</h2>
+<figure class="flow">
+<ol>
+<li>
+<span>01</span>
+<div>
+<strong>Stop Docker Compose</strong>
+<p>Remove containers and network. Preserve PostgreSQL data.</p>
+</div>
+</li>
+<li>
+<span>02</span>
+<div>
+<strong>Restore or stop Caddy</strong>
+<p>Restore saved config on port 2019 or stop owned instance on port 2020.</p>
+</div>
+</li>
+<li>
+<span>03</span>
+<div>
+<strong>Revert recorded hosts change</strong>
+<p>Remove only the exact tagged line recorded by this setup.</p>
+</div>
+</li>
+<li>
+<span>04</span>
+<div>
+<strong>Clear active markers</strong>
+<p>Remove hostname and PID records; retain certificate material.</p>
+</div>
+</li>
+<li>
+<span>05</span>
+<div>
+<strong>Handle generated Java output</strong>
+<p>Offer deletion of ext and target; default No after two seconds.</p>
+</div>
+</li>
+</ol>
+</figure>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Removed or restored table">
+<table>
+<thead>
+<tr>
+<th scope="col">Removed or restored</th>
+<th scope="col">Preserved</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Project containers and network</td>
+<td>hapi.postgress.data and Maven cache named volume</td>
+</tr>
+<tr>
+<td>Owned hosts entry and active markers</td>
+<td>Pre-existing hosts entries and .env</td>
+</tr>
+<tr>
+<td>Owned Caddy process or saved live config</td>
+<td>Caddy installation and macOS certificate trust</td>
+</tr>
+<tr>
+<td>Generated Java outputs only if confirmed</td>
+<td>Local CA material and truststore for the next start</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>If cleanup fails</h3>
+<p>The script stops at the failed command. For example, an unreachable original Caddy admin API can prevent later hosts cleanup. Fix that dependency and rerun down.sh. Keep .local-https until cleanup completes; its files identify which changes belong to this setup.</p>
+</section>
+<section id="repeat-the-setup-on-another-mac" aria-labelledby="repeat-the-setup-on-another-mac-title">
+<div class="eyebrow">03 / GUIDE</div>
+<h2 id="repeat-the-setup-on-another-mac-title">Repeat the setup on another Mac</h2>
+<h3>1  Prepare the prerequisites</h3>
+<p>Install and start Docker Desktop. Install Caddy, Python 3 and a Java installation with keytool. The scripts also use standard macOS tools such as curl, lsof, sed and ps. No dependencies are installed automatically.</p>
+<pre>
+<code>cd /path/to/aiscream-jpa
+cp .env.example .env</code>
+</pre>
+<h3>2  Edit the local environment</h3>
+<pre>
+<code>FHIR_PUBLIC_URL=https://demo.example.test/fhir
+FHIR_TESTER_NAME=&quot;FHIR Demo&quot;
+LOCAL_HTTPS=true</code>
+</pre>
+<p>Use a valid hostname and the exact /fhir path. Local HTTPS accepts the default HTTPS port or explicit port 443. It rejects query strings, fragments and usernames. The URL does not change public DNS.</p>
+<h3>3  Start and trust the browser certificate</h3>
+<pre>
+<code>./up.sh</code>
+</pre>
+<p>Respond to sudo locally if prompted. The script may need administrator access to start Caddy on port 443, read its CA certificate or append a hosts entry. It never stores a sudo password.</p>
+<p>For a new CA, import .local-https/root.crt into Keychain Access and enable SSL trust for that certificate. Java trust is already prepared by the script. For a CA already trusted on this Mac, set CADDY_STORAGE to its existing data folder before starting.</p>
+<pre>
+<code>CADDY_STORAGE=&quot;/Users/yourname/Library/Application Support/Caddy&quot;</code>
+</pre>
+<h3>4  Confirm the result</h3>
+<p>Wait for Ready, open the homepage URL without /fhir, and check that FHIR Base shows the configured HTTPS URL and the conformance warning is absent. The first startup can take time while packages load.</p>
+<h3>5  Stop or change the URL</h3>
+<pre>
+<code>./down.sh
+# Edit .env after shutdown, then restart
+./up.sh</code>
+</pre>
+<p>Plain HTTP: set LOCAL_HTTPS=false and FHIR_PUBLIC_URL=http://localhost:8080/fhir. An externally managed HTTPS proxy also uses LOCAL_HTTPS=false, but its URL must still be reachable and trusted by the tester inside Docker.</p>
+</section>
+<section id="configuration-and-file-ownership" aria-labelledby="configuration-and-file-ownership-title">
+<div class="eyebrow">04 / GUIDE</div>
+<h2 id="configuration-and-file-ownership-title">Configuration and file ownership</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Setting table">
+<table>
+<thead>
+<tr>
+<th scope="col">Setting</th>
+<th scope="col">Purpose and default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FHIR_PUBLIC_URL</td>
+<td>Single URL for the API and tester. Default http://localhost:8080/fhir.</td>
+</tr>
+<tr>
+<td>FHIR_TESTER_NAME</td>
+<td>Tester display name. Default Local FHIR.</td>
+</tr>
+<tr>
+<td>LOCAL_HTTPS</td>
+<td>Exactly true enables the macOS local HTTPS branch. Default false.</td>
+</tr>
+<tr>
+<td>CADDY_STORAGE</td>
+<td>Optional existing CA storage. Default repository .local-https/caddy.</td>
+</tr>
+<tr>
+<td>FHIR_HOST</td>
+<td>Derived from the URL by up.sh and exported for the Compose override.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>How the URL reaches HAPI</h3>
+<pre>
+<code>.env → up.sh exports → Compose environment → application.yaml
+
+hapi.fhir.server_address
+  ${FHIR_PUBLIC_URL:http://localhost:8080/fhir}
+hapi.fhir.tester.home.server_address
+  ${FHIR_PUBLIC_URL:http://localhost:8080/fhir}</code>
+</pre>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Repository file table">
+<table>
+<thead>
+<tr>
+<th scope="col">Repository file</th>
+<th scope="col">Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>up.sh and down.sh</td>
+<td>Root-level startup and cleanup entry points; no command-line flags.</td>
+</tr>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/docker-compose.yml">docker-compose.yml</a>
+</td>
+<td>HAPI, PostgreSQL, interceptor builder and URL environment variables.</td>
+</tr>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/compose.caddy.yaml">compose.caddy.yaml</a>
+</td>
+<td>Hostname to host-gateway mapping; read-only Java truststore mount; JVM options.</td>
+</tr>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/application.yaml">application.yaml</a>
+</td>
+<td>HAPI public URL, tester URL and tester name placeholders.</td>
+</tr>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/.env.example">.env.example</a>
+</td>
+<td>Shareable configuration example. Copy to ignored .env locally.</td>
+</tr>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/Caddyfile">Caddyfile</a>
+</td>
+<td>Original manual reference. Scripts generate .local-https/Caddyfile at runtime.</td>
+</tr>
+<tr>
+<td>README.md and .gitignore</td>
+<td>Operating instructions; exclude .env and generated HTTPS state.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Generated state is local</h3>
+<p>.local-https contains hostname, Caddyfile, PID or original config, root.crt, cacerts and diagnostics. hosts-entry exists only when the script added a tagged line. CA storage can contain private keys: do not commit or share it. HAPI mounts only cacerts, not the CA private key.</p>
+<p>The .env file is sourced as shell code. Keep assignments shell-compatible, quote values containing spaces, and inspect any .env obtained from another person before using it.</p>
+</section>
+<section id="troubleshooting-and-recovery" aria-labelledby="troubleshooting-and-recovery-title">
+<div class="eyebrow">05 / GUIDE</div>
+<h2 id="troubleshooting-and-recovery-title">Troubleshooting and recovery</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Symptom table">
+<table>
+<thead>
+<tr>
+<th scope="col">Symptom</th>
+<th scope="col">What to check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Conformance connection refused to 127.0.0.1:443</td>
+<td>Start through up.sh with LOCAL_HTTPS=true. A plain Compose start omits the hostname override and JVM truststore.</td>
+</tr>
+<tr>
+<td>Java certificate or PKIX error</td>
+<td>Verify root.crt belongs to the active Caddy CA. Check CADDY_STORAGE, then rerun up.sh to regenerate cacerts.</td>
+</tr>
+<tr>
+<td>Browser certificate warning</td>
+<td>Trust the exact local CA in Keychain, or reuse its existing CADDY_STORAGE. Browser trust does not follow Java trust.</td>
+</tr>
+<tr>
+<td>HTTP 502 during startup</td>
+<td>Wait for HAPI package loading. Inspect docker compose logs --tail=100 fhir. A running container is not necessarily a ready API.</td>
+</tr>
+<tr>
+<td>Port 443 already in use</td>
+<td>Check the listener. Stop the intended conflicting process; do not terminate unrelated services.</td>
+</tr>
+<tr>
+<td>Caddy admin API times out</td>
+<td>Check process state. A suspended process may retain its port. Resume or restart the intended Caddy instance.</td>
+</tr>
+<tr>
+<td>Hostname or mode change rejected</td>
+<td>Run down.sh first. It clears the active hostname marker after cleanup.</td>
+</tr>
+<tr>
+<td>Permission denied or sudo prompt</td>
+<td>Run from an interactive terminal and provide your own local administrator credentials.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Useful commands</h3>
+<pre>
+<code>docker compose ps
+docker compose logs --tail=100 fhir
+curl -fsS http://localhost:8080/fhir/metadata
+curl --cacert .local-https/root.crt -fsS \
+  https://your-hostname/fhir/metadata
+lsof -nP -iTCP:443 -sTCP:LISTEN
+ps -axo pid,state,command | rg caddy</code>
+</pre>
+<h3>Known boundaries</h3>
+<p>The local HTTPS script targets macOS with Docker Desktop. Linux and Windows were not implemented or tested. Custom API paths and HTTPS ports other than 443 are not supported by the URL validation. Existing hosts entries are preserved even if their address is unsuitable; inspect them if routing still fails.</p>
+<p>Cleanup does not uninstall Caddy, remove CA files or revoke manual Keychain trust. Startup and shutdown are sequential operations with no transaction or rollback. If a command fails midway, retain the state directory, diagnose the failure and rerun the appropriate script.</p>
+</section>
+<section id="changes-and-verification-record" aria-labelledby="changes-and-verification-record-title">
+<div class="eyebrow">06 / GUIDE</div>
+<h2 id="changes-and-verification-record-title">Changes and verification record</h2>
+<h3>What changed</h3>
+<p>The previous configuration hardcoded the public hostname in two HAPI settings and required manual Caddy setup. The implementation introduced shared environment settings, an optional Compose override, a container truststore, recorded system changes and ordinary up/down commands. The existing Maven builder ordering is retained. Normal shutdown no longer offers to delete PostgreSQL data.</p>
+<h3>Observed on 7 November 2026</h3>
+<p>The HTTPS homepage rendered successfully with Server PH Core and the HTTPS FHIR Base. Its embedded CapabilityStatement loaded; Failed to load conformance statement, HAPI-1361 and Connection refused were absent. The metadata endpoint returned a CapabilityStatement advertising https://phcore.thomasreyes.ph/fhir. Shell syntax, Compose configuration and git diff whitespace checks passed.</p>
+<p>The stack was stopped and restarted with persistent data retained. A suspended manually launched Caddy was replaced with a background instance using the existing trusted CA. The final admin API shutdown implementation and newly created hosts-entry cleanup branch were reviewed, but were not exercised in a separate complete final down/up cycle. Browser certificate trust was not modified.</p>
+<h3>Source snapshot</h3>
+<p>This guide accompanies the local HTTPS implementation prepared after checkpoint 0e48786. The source paths below identify the documented scripts; SHA256 prefixes identify their source snapshot.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Source file table">
+<table>
+<thead>
+<tr>
+<th scope="col">Source file</th>
+<th scope="col">SHA256 prefix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/up.sh">up.sh</a>
+</td>
+<td>b51c113124ff1948a558</td>
+</tr>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/down.sh">down.sh</a>
+</td>
+<td>b91dd9abc5bd239d6642</td>
+</tr>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/docker-compose.yml">docker-compose.yml</a>
+</td>
+<td>52cefc0deb0d6aa91784</td>
+</tr>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/compose.caddy.yaml">compose.caddy.yaml</a>
+</td>
+<td>e0351e7019dbcc339b7c</td>
+</tr>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/application.yaml">application.yaml</a>
+</td>
+<td>5c3a2f4d317217a7039f</td>
+</tr>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/.env.example">.env.example</a>
+</td>
+<td>0a75da8ea2f76f42302e</td>
+</tr>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/.gitignore">.gitignore</a>
+</td>
+<td>09403dbb0cf8a5ad394b</td>
+</tr>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/README.md">README.md</a>
+</td>
+<td>102f32dcd42fb193af51</td>
+</tr>
+<tr>
+<td>
+<a href="https://github.com/niccoreyes/aiscream-jpa/blob/main/Caddyfile">Caddyfile</a>
+</td>
+<td>e42631ecf6d31b2e1b24</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Maintenance</h3>
+<p>When a script changes, update this guide and repeat the checks on the preceding pages. Keep the local environment and private CA material outside version control. This document is an operating guide for a local demo, not a production deployment design.</p>
+</section>
+<section id="publishing">
+<div class="eyebrow">PUBLISHING</div>
+<h2>Keep this guide repeatable</h2>
+<p>GitHub Pages serves the main branch from /docs. Edit docs/index.html or docs/guide.css, commit, and push. No package installation or build step is needed.</p>
+<pre>
+<code>git add docs/index.html docs/guide.css
+git commit -m "Update local HTTPS guide"
+git push origin main</code>
+</pre>
+<p>Pages hosts only this documentation. It does not run HAPI, Caddy or the database. Your local FHIR endpoint still depends on your Mac and the scripts.</p>
+<p>
+<a href="https://docs.github.com/en/rest/pages/pages#create-a-github-pages-site">GitHub Pages configuration reference</a>
+</p>
+</section>
+<footer>The repository scripts are the source of truth. See the verification record for the limits of the recorded checks.</footer>
+</main>
+<script src="guide.js">
+</script>
+</body>
+</html>
