@@ -1,0 +1,10 @@
+services:
+  fhir:
+    extra_hosts:
+      - "${FHIR_HOST}:host-gateway"
+    environment:
+      JAVA_TOOL_OPTIONS: >-
+        -Djavax.net.ssl.trustStore=/app/local-certs/cacerts
+        -Djavax.net.ssl.trustStorePassword=changeit
+    volumes:
+      - ./.local-https/cacerts:/app/local-certs/cacerts:ro

@@ -207,7 +207,47 @@ Useful references: [HAPI JPA configuration](https://hapifhir.io/hapi-fhir/docs/s
 [validation support](https://hapifhir.io/hapi-fhir/docs/validation/validation_support_modules.html),
 and [package installation](https://hapifhir.io/hapi-fhir/docs/server_jpa/packages.html).
 
-## Local HTTPS demo on macOS
+## Reproducible local HTTPS on macOS
+
+Read the [visual architecture and setup guide](https://niccoreyes.github.io/aiscream-jpa/)
+for startup and shutdown diagrams, configuration, and troubleshooting.
+The guide lives in `docs/` and GitHub Pages publishes it from `main`.
+
+Copy `.env.example` to `.env`, edit `FHIR_PUBLIC_URL` and `FHIR_TESTER_NAME`,
+then run `./up.sh`. Set `LOCAL_HTTPS=false` for ordinary HTTP or a separately
+managed proxy. The same URL is used for the API and the homepage tester.
+Docker Desktop, Caddy, Python 3 and Java `keytool` must already be installed.
+The `.env` file is sourced by Bash: use shell-compatible assignments and trust
+its contents as you would a script.
+
+`up.sh` prepares Java's CA truststore, maps the hostname to Docker's host gateway,
+and adds a marked `/etc/hosts` entry only when none exists. It can reuse an
+existing single-site Caddy for the same hostname, saving its original config;
+otherwise it starts its own Caddy instance. A different Caddy configuration is
+rejected rather than overwritten. New instances may request `sudo` for port 443.
+Generated state and CA material stay in the ignored `.local-https/` directory.
+The truststore retains the HAPI image's existing CAs for remote terminology calls.
+If you already trusted Caddy's CA, set `CADDY_STORAGE` in `.env` to its existing
+data folder (see `.env.example`) to reuse it without changing Keychain trust.
+
+`./down.sh` stops the stack, restores the saved Caddy configuration or stops the
+Caddy instance it started, and removes only its marked hosts entry. Existing
+hosts entries and PostgreSQL data are preserved. It does not modify macOS
+certificate trust. If you change the hostname, run `down.sh` first.
+
+For a newly created CA, browser trust is a manual one-time step: import
+`.local-https/root.crt` into Keychain Access and trust it for SSL. The script
+retains CA material across shutdowns so that trust remains valid next time.
+If you later remove browser trust, remove that exact certificate in Keychain
+Access. Never distribute the generated CA private key.
+
+Both existing and newly started Caddy instances use a loopback listener.
+This workflow is for synthetic demo data on macOS with Docker Desktop.
+
+### Manual setup reference
+
+The instructions below describe the original manual setup. Prefer `up.sh` and
+`down.sh` above; manual setup alone does not configure the tester's JVM trust.
 
 To record a browser demo using the URL `https://phcore.thomasreyes.ph/fhir/...`
 while HAPI continues to run at `http://localhost:8080/fhir`, use Caddy as a

@@ -12,6 +12,9 @@ services:
 
   fhir:
     container_name: hapi
+    environment:
+      FHIR_PUBLIC_URL: ${FHIR_PUBLIC_URL:-http://localhost:8080/fhir}
+      FHIR_TESTER_NAME: ${FHIR_TESTER_NAME:-Local FHIR}
     image: "hapiproject/hapi:latest"
     # restart: on-failure
     ports:

@@ -1,4 +1,6 @@
 *.orig
+.env
+.local-https/
 target/
 *.iml
 

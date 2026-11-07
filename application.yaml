@@ -217,7 +217,7 @@ hapi:
     # use_apache_address_strategy_https: false
     # custom_content_path: ./custom               # folder name must be 'custom'
     # app_content_path: ./configs/app            # served under /web/app
-    server_address: https://phcore.thomasreyes.ph/fhir # http://hapi.fhir.org/baseR4
+    server_address: ${FHIR_PUBLIC_URL:http://localhost:8080/fhir}
     # defer_indexing_for_codesystems_of_size: 101
 
     # -------------------------------------------------------------------------------
@@ -630,8 +630,8 @@ hapi:
     # -------------------------------------------------------------------------------
     tester:
       home:
-        name: PH Core
-        server_address: 'https://phcore.thomasreyes.ph/fhir'
+        name: ${FHIR_TESTER_NAME:Local FHIR}
+        server_address: ${FHIR_PUBLIC_URL:http://localhost:8080/fhir}
         fhir_version: R4
 
     # -------------------------------------------------------------------------------
